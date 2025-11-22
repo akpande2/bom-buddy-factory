@@ -3,12 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, ClipboardList, Mail, Package, Truck, Download, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 
 interface StoredDocument {
   type: string;
@@ -129,20 +124,12 @@ export const DocumentRepository = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
-        <DialogContent className="max-w-4xl h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>{previewDoc?.type} - Preview</DialogTitle>
-          </DialogHeader>
-          {previewDoc && (
-            <iframe
-              src={previewDoc.data}
-              className="w-full h-full border rounded"
-              title="PDF Preview"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <PDFPreviewModal
+        open={!!previewDoc}
+        onOpenChange={() => setPreviewDoc(null)}
+        pdfData={previewDoc?.data || null}
+        title={previewDoc ? `${previewDoc.type} - Preview` : undefined}
+      />
     </>
   );
 };
