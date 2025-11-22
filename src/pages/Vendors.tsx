@@ -304,6 +304,9 @@ const Vendors = () => {
           status: validatedData.status,
           isoCertificatesName: formData.isoCertificatesName,
           cancelledChequeName: formData.cancelledChequeName,
+          timeline: {
+            createdAt: new Date().toISOString(),
+          },
         };
         addVendor(newVendor);
         toast.success("Vendor added successfully");

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, FileText, Upload, Download, Plus, X, Eye, FileCheck, Star } from "lucide-react";
+import { ArrowLeft, Pencil, FileText, Upload, Download, Plus, X, Eye, FileCheck, Star, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVendorStore } from "@/stores/vendorStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -266,6 +266,10 @@ const VendorProfile = () => {
     const updatedVendor = {
       ...vendor,
       ratings,
+      timeline: {
+        ...vendor.timeline,
+        lastRatingUpdate: new Date().toISOString(),
+      },
     };
     updateVendor(vendor.id, updatedVendor);
     setIsRatingDialogOpen(false);
@@ -834,6 +838,91 @@ const VendorProfile = () => {
 
         {/* Right Column - Documents & Categories */}
         <div className="space-y-6">
+          {/* Timeline */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Vendor Timeline
+              </CardTitle>
+              <CardDescription>Key milestones and events</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Timeline Items */}
+                <div className="relative pl-8 pb-4 border-l-2 border-muted">
+                  <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-primary border-2 border-background" />
+                  <div>
+                    <Label className="text-sm font-semibold">Vendor Added</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendor.timeline?.createdAt 
+                        ? new Date(vendor.timeline.createdAt).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })
+                        : 'Date not available'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative pl-8 pb-4 border-l-2 border-muted">
+                  <div className={`absolute -left-2 top-0 w-4 h-4 rounded-full border-2 border-background ${
+                    vendor.timeline?.firstPODate ? 'bg-primary' : 'bg-muted'
+                  }`} />
+                  <div>
+                    <Label className="text-sm font-semibold">First Purchase Order</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendor.timeline?.firstPODate 
+                        ? new Date(vendor.timeline.firstPODate).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })
+                        : 'No PO yet'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative pl-8 pb-4 border-l-2 border-muted">
+                  <div className={`absolute -left-2 top-0 w-4 h-4 rounded-full border-2 border-background ${
+                    vendor.timeline?.lastDeliveryDate ? 'bg-primary' : 'bg-muted'
+                  }`} />
+                  <div>
+                    <Label className="text-sm font-semibold">Last Delivery</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendor.timeline?.lastDeliveryDate 
+                        ? new Date(vendor.timeline.lastDeliveryDate).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })
+                        : 'No deliveries yet'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative pl-8">
+                  <div className={`absolute -left-2 top-0 w-4 h-4 rounded-full border-2 border-background ${
+                    vendor.timeline?.lastRatingUpdate ? 'bg-primary' : 'bg-muted'
+                  }`} />
+                  <div>
+                    <Label className="text-sm font-semibold">Last Rating Update</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendor.timeline?.lastRatingUpdate 
+                        ? new Date(vendor.timeline.lastRatingUpdate).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })
+                        : 'Not rated yet'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Product Categories */}
           <Card>
             <CardHeader>
