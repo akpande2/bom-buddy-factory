@@ -39,6 +39,12 @@ export interface Vendor {
     pricingConsistency: number;
     communication: number;
   };
+  timeline?: {
+    createdAt?: string;
+    firstPODate?: string;
+    lastDeliveryDate?: string;
+    lastRatingUpdate?: string;
+  };
 }
 
 interface VendorStore {
