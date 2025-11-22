@@ -67,6 +67,7 @@ const Items = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [gstFilter, setGstFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [reorderFilter, setReorderFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<InventoryItem | null>(null);
@@ -226,10 +227,12 @@ const Items = () => {
       const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
       const matchesGst = gstFilter === "all" || item.gstRate.toString() === gstFilter;
       const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+      const matchesReorder = reorderFilter === "all" || 
+        (reorderFilter === "reorder" && item.currentStock < item.reorderLevel);
 
-      return matchesSearch && matchesCategory && matchesGst && matchesStatus;
+      return matchesSearch && matchesCategory && matchesGst && matchesStatus && matchesReorder;
     });
-  }, [items, searchQuery, categoryFilter, gstFilter, statusFilter]);
+  }, [items, searchQuery, categoryFilter, gstFilter, statusFilter, reorderFilter]);
 
   return (
     <div className="space-y-6">
@@ -265,7 +268,7 @@ const Items = () => {
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
@@ -278,7 +281,7 @@ const Items = () => {
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="GST Rate" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">All GST Rates</SelectItem>
                 <SelectItem value="5">5%</SelectItem>
                 <SelectItem value="12">12%</SelectItem>
@@ -290,10 +293,19 @@ const Items = () => {
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background z-50">
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={reorderFilter} onValueChange={setReorderFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Stock Level" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                <SelectItem value="all">All Items</SelectItem>
+                <SelectItem value="reorder">Below Reorder Level</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -323,7 +335,14 @@ const Items = () => {
                 {filteredItems.length > 0 ? (
                   filteredItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.itemName}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {item.itemName}
+                          {item.currentStock < item.reorderLevel && (
+                            <Badge className="bg-red-500 text-white">Reorder Needed</Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="font-mono text-sm">{item.sku}</TableCell>
                       <TableCell className="font-mono text-sm">{item.hsnSacCode}</TableCell>
                       <TableCell>{item.uom}</TableCell>
