@@ -7,6 +7,7 @@ import { VendorComparisonCharts } from "@/components/purchase-orders/VendorCompa
 import { FilterBar } from "@/components/purchase-orders/FilterBar";
 import { ActionPanel } from "@/components/purchase-orders/ActionPanel";
 import { QuickNavButtons } from "@/components/purchase-orders/QuickNavButtons";
+import { VendorSelection } from "@/components/purchase-orders/VendorSelection";
 
 export const MainContent = () => {
   return (
@@ -18,6 +19,8 @@ export const MainContent = () => {
         </div>
         
         <QuickNavButtons />
+        
+        <VendorSelection />
         
         <KPICards />
         
