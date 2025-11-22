@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, CheckCircle, Clock, XCircle, ArrowRight } from "lucide-react";
+import { Plus, FileText, CheckCircle, Clock, XCircle, ArrowRight, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type P2PStatus = "OPS" | "PR" | "SCM" | "CS" | "MD_Review" | "MD_Approved" | "LOI" | "PO_Issued" | "GRN" | "Completed";
@@ -54,6 +54,7 @@ const PurchaseOrders = () => {
   const [openOPSDialog, setOpenOPSDialog] = useState(false);
   const [openPRDialog, setOpenPRDialog] = useState(false);
   const [openCSDialog, setOpenCSDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [orders, setOrders] = useState<P2POrder[]>([
     {
@@ -191,11 +192,50 @@ const PurchaseOrders = () => {
     { key: "GRN", label: "GRN", icon: FileText },
   ];
 
+  // Filter orders based on search query
+  const filteredOrders = orders.filter((order) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      order.opsNo.toLowerCase().includes(query) ||
+      order.prNo?.toLowerCase().includes(query) ||
+      order.csNo?.toLowerCase().includes(query) ||
+      order.poNo?.toLowerCase().includes(query) ||
+      order.grnNo?.toLowerCase().includes(query) ||
+      order.recommendedSupplier?.toLowerCase().includes(query) ||
+      order.suppliers?.some(supplier => supplier.toLowerCase().includes(query)) ||
+      order.itemDescription.toLowerCase().includes(query)
+    );
+  });
+
+  // Filter comparative sheets based on search query
+  const filteredComparativeSheets = comparativeSheets.filter((cs) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      cs.csNo.toLowerCase().includes(query) ||
+      cs.prNo.toLowerCase().includes(query) ||
+      cs.recommendedSupplier.toLowerCase().includes(query) ||
+      cs.vendors.some(vendor => vendor.name.toLowerCase().includes(query)) ||
+      cs.itemDescription.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="p-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground">Purchase to Procure (P2P)</h1>
         <p className="text-muted-foreground mt-1">Manage complete procurement workflow</p>
+      </div>
+
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search PR/PO/CS/GRN/Vendor..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </div>
 
       <Tabs defaultValue="active" className="space-y-4">
@@ -277,7 +317,7 @@ const PurchaseOrders = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.opsNo}</TableCell>
                       <TableCell>{order.itemDescription}</TableCell>
@@ -411,7 +451,7 @@ const PurchaseOrders = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {comparativeSheets.map((cs) => (
+                  {filteredComparativeSheets.map((cs) => (
                     <TableRow key={cs.id}>
                       <TableCell className="font-medium">{cs.csNo}</TableCell>
                       <TableCell>{cs.prNo}</TableCell>
