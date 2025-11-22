@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Edit, Package, TrendingUp, FileText, History } from "lucide-react";
+import { ArrowLeft, Edit, Package, TrendingUp, FileText, History, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -47,6 +54,7 @@ const ItemDetail = () => {
   const { toast } = useToast();
   const { getItemById } = useInventoryStore();
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [valuationMethod, setValuationMethod] = useState("FIFO");
 
   const item = getItemById(id || "");
 
@@ -81,6 +89,15 @@ const ItemDetail = () => {
     { type: "GRN", number: "GRN-2024-001", date: "2025-11-22", status: "Received", quantity: 50 },
     { type: "PO", number: "PO-2024-142", date: "2025-10-10", status: "Completed", quantity: 100 },
     { type: "GRN", number: "GRN-2024-002", date: "2025-10-15", status: "Received", quantity: 100 },
+  ];
+
+  // Mock valuation data
+  const valuationData = valuationMethod === "FIFO" ? [
+    { batch: "Batch-001", date: "2025-10-15", quantity: 75, unitCost: 1200, totalValue: 90000, age: 38 },
+    { batch: "Batch-002", date: "2025-11-22", quantity: 50, unitCost: 1250, totalValue: 62500, age: 0 },
+    { batch: "Batch-003", date: "2025-09-08", quantity: 20, unitCost: 1180, totalValue: 23600, age: 75 },
+  ] : [
+    { batch: "WAVG-001", date: "2025-11-22", quantity: 145, unitCost: 1215, totalValue: 176175, age: 0 },
   ];
 
   const onAdjustStock = (values: z.infer<typeof adjustStockSchema>) => {
@@ -284,6 +301,86 @@ const ItemDetail = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Stock Valuation */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle>Stock Valuation</CardTitle>
+                <CardDescription>Inventory valuation using selected method</CardDescription>
+              </div>
+            </div>
+            <Select value={valuationMethod} onValueChange={setValuationMethod}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FIFO">FIFO (First In First Out)</SelectItem>
+                <SelectItem value="WAVG">WAVG (Weighted Average)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Batch/Layer</TableHead>
+                  <TableHead>Received Date</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead className="text-right">Unit Cost</TableHead>
+                  <TableHead className="text-right">Total Value</TableHead>
+                  <TableHead className="text-right">Age (Days)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {valuationData.map((entry, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-mono font-medium">
+                      {entry.batch}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(entry.date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {entry.quantity} {item.uom}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ₹{entry.unitCost.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      ₹{entry.totalValue.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={entry.age > 60 ? "destructive" : entry.age > 30 ? "secondary" : "outline"}>
+                        {entry.age}d
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-muted/50 font-semibold">
+                  <TableCell colSpan={2}>Total Stock Value</TableCell>
+                  <TableCell className="text-right">
+                    {valuationData.reduce((sum, entry) => sum + entry.quantity, 0)} {item.uom}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ₹{(valuationData.reduce((sum, entry) => sum + entry.totalValue, 0) / 
+                      valuationData.reduce((sum, entry) => sum + entry.quantity, 0)).toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ₹{valuationData.reduce((sum, entry) => sum + entry.totalValue, 0).toLocaleString()}
+                  </TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stock History */}
       <Card>
