@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, TrendingUp, ShoppingCart, Users, FileText, Settings, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, ShoppingCart, Users, FileText, Settings, FileSpreadsheet, Building2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 
 import {
@@ -21,6 +21,7 @@ const inventoryItems = [
   { title: "Quotations", url: "/quotations", icon: FileSpreadsheet },
   { title: "Purchase Orders", url: "/purchase-orders", icon: ShoppingCart },
   { title: "Suppliers", url: "/suppliers", icon: Users },
+  { title: "Vendor Management", url: "/vendors", icon: Building2 },
   { title: "Reports", url: "/reports", icon: FileText },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
