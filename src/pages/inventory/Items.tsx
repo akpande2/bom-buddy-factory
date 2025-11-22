@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
-import { Plus, Search, Eye, Pencil, Trash2 } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Plus, Search, Eye, Pencil, Trash2, Upload, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +74,9 @@ const Items = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<InventoryItem | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { items, addItem, updateItem, deleteItem } = useInventoryStore();
 
@@ -219,6 +223,95 @@ const Items = () => {
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        setCsvPreview(results.data);
+        setImportDialogOpen(true);
+      },
+      error: (error) => {
+        toast.error(`CSV parsing error: ${error.message}`);
+      },
+    });
+  };
+
+  const handleImportItems = () => {
+    let successCount = 0;
+    let errorCount = 0;
+
+    csvPreview.forEach((row: any) => {
+      try {
+        const gstRate = parseInt(row.gstRate || row.GST || "18");
+        const validGstRate = [0, 5, 12, 18, 28].includes(gstRate) ? gstRate : 18;
+
+        const newItem: InventoryItem = {
+          id: Date.now().toString() + Math.random(),
+          itemName: row.itemName || row.name || "",
+          sku: (row.sku || row.SKU || "").toUpperCase(),
+          category: row.category || "General",
+          itemType: (row.itemType || "Raw Material") as any,
+          description: row.description || "",
+          hsnSacCode: row.hsnSacCode || row.HSN || "",
+          gstRate: validGstRate as 0 | 5 | 12 | 18 | 28,
+          uom: row.uom || row.UOM || "Pcs",
+          openingStock: parseFloat(row.openingStock || row.stock || "0"),
+          currentStock: parseFloat(row.openingStock || row.stock || "0"),
+          reorderLevel: parseFloat(row.reorderLevel || "10"),
+          maxStockLevel: parseFloat(row.maxStockLevel || "100"),
+          standardCost: parseFloat(row.standardCost || row.cost || "0"),
+          lastPurchasePrice: parseFloat(row.lastPurchasePrice || "0"),
+          status: (row.status === "Inactive" ? "Inactive" : "Active") as "Active" | "Inactive",
+        };
+
+        addItem(newItem);
+        successCount++;
+      } catch (error) {
+        errorCount++;
+      }
+    });
+
+    setImportDialogOpen(false);
+    setCsvPreview([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    
+    toast.success(`Imported ${successCount} items successfully${errorCount > 0 ? `, ${errorCount} failed` : ""}`);
+  };
+
+  const downloadTemplate = () => {
+    const template = [
+      {
+        itemName: "Example Item",
+        sku: "ITEM-001",
+        category: "Raw Material",
+        itemType: "Raw Material",
+        description: "Sample description",
+        hsnSacCode: "84212190",
+        gstRate: 18,
+        uom: "Pcs",
+        openingStock: 100,
+        reorderLevel: 20,
+        maxStockLevel: 500,
+        standardCost: 150.50,
+        lastPurchasePrice: 150.50,
+        status: "Active",
+      },
+    ];
+
+    const csv = Papa.unparse(template);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "item_import_template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const matchesSearch =
@@ -243,10 +336,23 @@ const Items = () => {
           <h1 className="text-3xl font-bold text-foreground">Inventory Items</h1>
           <p className="text-muted-foreground mt-1">Complete catalog of all inventory items</p>
         </div>
-        <Button className="gap-2" onClick={handleOpenDialog}>
-          <Plus className="h-4 w-4" />
-          Add New Item
-        </Button>
+        <div className="flex gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".csv"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
+          <Button className="gap-2" onClick={handleOpenDialog}>
+            <Plus className="h-4 w-4" />
+            Add New Item
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -672,6 +778,92 @@ const Items = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* CSV Import Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-background">
+          <DialogHeader>
+            <DialogTitle>Import Items from CSV</DialogTitle>
+            <DialogDescription>
+              Review the parsed data before importing. {csvPreview.length} row(s) found.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="text-sm">
+                <p className="font-semibold">Need a template?</p>
+                <p className="text-muted-foreground">Download our CSV template to get started</p>
+              </div>
+              <Button variant="outline" size="sm" className="gap-2" onClick={downloadTemplate}>
+                <Download className="h-4 w-4" />
+                Download Template
+              </Button>
+            </div>
+
+            {csvPreview.length > 0 && (
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>HSN</TableHead>
+                      <TableHead>GST%</TableHead>
+                      <TableHead>UoM</TableHead>
+                      <TableHead className="text-right">Stock</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {csvPreview.slice(0, 10).map((row: any, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {row.itemName || row.name || "-"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {(row.sku || row.SKU || "-").toUpperCase()}
+                        </TableCell>
+                        <TableCell>{row.category || "General"}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {row.hsnSacCode || row.HSN || "-"}
+                        </TableCell>
+                        <TableCell>{row.gstRate || row.GST || "18"}%</TableCell>
+                        <TableCell>{row.uom || row.UOM || "Pcs"}</TableCell>
+                        <TableCell className="text-right">
+                          {row.openingStock || row.stock || "0"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {csvPreview.length > 10 && (
+                  <div className="p-2 text-center text-sm text-muted-foreground border-t">
+                    + {csvPreview.length - 10} more items
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setImportDialogOpen(false);
+                  setCsvPreview([]);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleImportItems} disabled={csvPreview.length === 0}>
+                Import {csvPreview.length} Item(s)
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
