@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, FileText, Upload, Download, Plus, X, Eye, FileCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useVendorStore } from "@/stores/vendorStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -16,60 +17,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-interface Vendor {
-  id: string;
-  name: string;
-  vendorType: "Manufacturer" | "Trader" | "Service Provider";
-  website?: string;
-  contactPerson: string;
-  phone: string;
-  email: string;
-  address: string;
-  gstNumber: string;
-  panNumber: string;
-  msmeNumber?: string;
-  udyamNumber?: string;
-  isoCertificates?: string;
-  isoCertificatesName?: string;
-  bankName: string;
-  branchName: string;
-  accountNumber: string;
-  ifscCode: string;
-  cancelledCheque?: string;
-  cancelledChequeName?: string;
-  rating: number;
-  status: "Active" | "Inactive";
-  productCategories?: string[];
-  notes?: { id: string; text: string; date: string; author: string }[];
-  additionalDocuments?: { id: string; name: string; uploadDate: string; type: string; data: string }[];
-  documentVault?: {
-    gstCertificate?: { name: string; uploadDate: string; data: string };
-    msmeCertificate?: { name: string; uploadDate: string; data: string };
-    isoCertificates?: { id: string; name: string; uploadDate: string; data: string }[];
-    cancelledCheque?: { name: string; uploadDate: string; data: string };
-  };
-  ratings?: {
-    deliveryTimeliness: number;
-    quality: number;
-    pricingConsistency: number;
-    communication: number;
-  };
-}
+import type { Vendor } from "@/stores/vendorStore";
 
 const VendorProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { getVendorById, updateVendor } = useVendorStore();
 
-  // Get vendor from localStorage
-  const getVendor = (): Vendor | null => {
-    const vendorsData = localStorage.getItem("vendors");
-    if (!vendorsData) return null;
-    const vendors = JSON.parse(vendorsData);
-    return vendors.find((v: Vendor) => v.id === id) || null;
-  };
-
-  const [vendor, setVendor] = useState<Vendor | null>(getVendor());
+  const vendor = id ? getVendorById(id) : null;
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [isDocDialogOpen, setIsDocDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -87,7 +42,6 @@ const VendorProfile = () => {
     communication: vendor?.ratings?.communication || 0,
   });
 
-  if (!vendor) {
     return (
       <div className="p-6">
         <div className="text-center">
@@ -101,14 +55,8 @@ const VendorProfile = () => {
     );
   }
 
-  const updateVendor = (updatedVendor: Vendor) => {
-    const vendorsData = localStorage.getItem("vendors");
-    if (!vendorsData) return;
-
-    const vendors = JSON.parse(vendorsData);
-    const updatedVendors = vendors.map((v: Vendor) => (v.id === updatedVendor.id ? updatedVendor : v));
-    localStorage.setItem("vendors", JSON.stringify(updatedVendors));
-    setVendor(updatedVendor);
+  const handleVendorUpdate = (updatedFields: Partial<Vendor>) => {
+    updateVendor(vendor.id, updatedFields);
   };
 
   const handleAddNote = () => {
@@ -129,7 +77,7 @@ const VendorProfile = () => {
       notes: [...(vendor.notes || []), note],
     };
 
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     setNewNote("");
     setIsNoteDialogOpen(false);
     toast.success("Note added successfully");
@@ -140,7 +88,7 @@ const VendorProfile = () => {
       ...vendor,
       notes: vendor.notes?.filter((n) => n.id !== noteId) || [],
     };
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     toast.success("Note deleted");
   };
 
@@ -182,7 +130,7 @@ const VendorProfile = () => {
       additionalDocuments: [...(vendor.additionalDocuments || []), doc],
     };
 
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     setUploadingDoc(null);
     setIsDocDialogOpen(false);
     toast.success("Document uploaded successfully");
@@ -193,7 +141,7 @@ const VendorProfile = () => {
       ...vendor,
       additionalDocuments: vendor.additionalDocuments?.filter((d) => d.id !== docId) || [],
     };
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     toast.success("Document deleted");
   };
 
@@ -213,7 +161,7 @@ const VendorProfile = () => {
       productCategories: [...(vendor.productCategories || []), newTag.trim()],
     };
 
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     setNewTag("");
     setIsTagDialogOpen(false);
     toast.success("Category added");
@@ -224,7 +172,7 @@ const VendorProfile = () => {
       ...vendor,
       productCategories: vendor.productCategories?.filter((t) => t !== tag) || [],
     };
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     toast.success("Category removed");
   };
 
@@ -273,7 +221,7 @@ const VendorProfile = () => {
         documentVault: updatedVault,
       };
 
-      updateVendor(updatedVendor);
+      updateVendor(vendor.id, updatedVendor);
       setIsVaultUploadOpen(false);
       toast.success("Document uploaded to vault");
     };
@@ -298,7 +246,7 @@ const VendorProfile = () => {
       documentVault: updatedVault,
     };
 
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     toast.success("Document removed from vault");
   };
 
@@ -318,7 +266,7 @@ const VendorProfile = () => {
       ...vendor,
       ratings,
     };
-    updateVendor(updatedVendor);
+    updateVendor(vendor.id, updatedVendor);
     setIsRatingDialogOpen(false);
     toast.success("Ratings updated successfully");
   };

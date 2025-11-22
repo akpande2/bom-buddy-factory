@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Eye, Pencil, Trash2, ArrowUpDown, Upload, X, CheckCircle2, XCircle, PieChart, TrendingUp, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useVendorStore, type Vendor } from "@/stores/vendorStore";
 import {
   Dialog,
   DialogContent,
@@ -84,42 +85,18 @@ const vendorSchema = z.object({
   status: z.enum(["Active", "Inactive"]),
 });
 
-type Vendor = z.infer<typeof vendorSchema> & {
-  id: string;
-  isoCertificatesName?: string;
-  cancelledChequeName?: string;
-  ratings?: {
-    deliveryTimeliness: number;
-    quality: number;
-    pricingConsistency: number;
-    communication: number;
-  };
-};
-
-type SortField = keyof Omit<Vendor, "id" | "isoCertificates" | "cancelledCheque" | "isoCertificatesName" | "cancelledChequeName">;
+type SortField = keyof Omit<
+  Vendor,
+  "id" | "isoCertificates" | "cancelledCheque" | "isoCertificatesName" | "cancelledChequeName" | "productCategories" | "notes" | "additionalDocuments" | "documentVault" | "ratings"
+>;
 type SortDirection = "asc" | "desc";
 
 const Vendors = () => {
   const navigate = useNavigate();
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-
-  // Load vendors from localStorage on mount
-  useEffect(() => {
-    const vendorsData = localStorage.getItem("vendors");
-    if (vendorsData) {
-      setVendors(JSON.parse(vendorsData));
-    }
-  }, []);
-
-  // Save vendors to localStorage whenever they change
-  useEffect(() => {
-    if (vendors.length > 0) {
-      localStorage.setItem("vendors", JSON.stringify(vendors));
-    }
-  }, [vendors]);
+  const { vendors, addVendor, updateVendor, deleteVendor } = useVendorStore();
   const [isOpen, setIsOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
-  const [deleteVendor, setDeleteVendor] = useState<Vendor | null>(null);
+  const [deleteVendorDialog, setDeleteVendorDialog] = useState<Vendor | null>(null);
   const [viewVendor, setViewVendor] = useState<Vendor | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
@@ -268,27 +245,38 @@ const Vendors = () => {
       const validatedData = vendorSchema.parse(formData);
 
       if (editingVendor) {
-        setVendors(
-          vendors.map((v) =>
-            v.id === editingVendor.id
-              ? {
-                  ...validatedData,
-                  id: editingVendor.id,
-                  isoCertificatesName: formData.isoCertificatesName,
-                  cancelledChequeName: formData.cancelledChequeName,
-                }
-              : v
-          )
-        );
+        updateVendor(editingVendor.id, {
+          ...validatedData,
+          isoCertificatesName: formData.isoCertificatesName,
+          cancelledChequeName: formData.cancelledChequeName,
+        });
         toast.success("Vendor updated successfully");
       } else {
         const newVendor: Vendor = {
           id: Date.now().toString(),
-          ...validatedData,
+          name: validatedData.name,
+          vendorType: validatedData.vendorType,
+          website: validatedData.website,
+          contactPerson: validatedData.contactPerson,
+          phone: validatedData.phone,
+          email: validatedData.email,
+          address: validatedData.address,
+          gstNumber: validatedData.gstNumber,
+          panNumber: validatedData.panNumber,
+          msmeNumber: validatedData.msmeNumber,
+          udyamNumber: validatedData.udyamNumber,
+          isoCertificates: validatedData.isoCertificates,
+          bankName: validatedData.bankName,
+          branchName: validatedData.branchName,
+          accountNumber: validatedData.accountNumber,
+          ifscCode: validatedData.ifscCode,
+          cancelledCheque: validatedData.cancelledCheque,
+          rating: validatedData.rating,
+          status: validatedData.status,
           isoCertificatesName: formData.isoCertificatesName,
           cancelledChequeName: formData.cancelledChequeName,
         };
-        setVendors([...vendors, newVendor]);
+        addVendor(newVendor);
         toast.success("Vendor added successfully");
       }
 
@@ -337,10 +325,10 @@ const Vendors = () => {
   };
 
   const handleDelete = () => {
-    if (deleteVendor) {
-      setVendors(vendors.filter((v) => v.id !== deleteVendor.id));
+    if (deleteVendorDialog) {
+      deleteVendor(deleteVendorDialog.id);
       toast.success("Vendor deleted successfully");
-      setDeleteVendor(null);
+      setDeleteVendorDialog(null);
     }
   };
 
@@ -832,7 +820,7 @@ const Vendors = () => {
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(vendor)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteVendor(vendor)}>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteVendorDialog(vendor)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -1185,12 +1173,12 @@ const Vendors = () => {
       </Dialog>
 
       {/* Delete Dialog */}
-      <AlertDialog open={!!deleteVendor} onOpenChange={() => setDeleteVendor(null)}>
+      <AlertDialog open={!!deleteVendorDialog} onOpenChange={() => setDeleteVendorDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <strong>{deleteVendor?.name}</strong>. This action cannot be undone.
+              This will permanently delete <strong>{deleteVendorDialog?.name}</strong>. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
