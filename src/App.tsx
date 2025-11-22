@@ -12,6 +12,7 @@ import Usage from "./pages/Usage";
 import Stock from "./pages/Stock";
 import Quotations from "./pages/Quotations";
 import PurchaseOrders from "./pages/PurchaseOrders";
+import OpsForm from "./pages/OpsForm";
 import Suppliers from "./pages/Suppliers";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -51,6 +52,7 @@ const App = () => (
                   <Route path="/stock" element={<Stock />} />
                   <Route path="/quotations" element={<Quotations />} />
                   <Route path="/purchase-orders" element={<PurchaseOrders />} />
+                  <Route path="/ops-form" element={<OpsForm />} />
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, FileSpreadsheet, Package, Truck, AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const actions = [
   {
@@ -48,6 +49,14 @@ const actions = [
 ];
 
 export const ActionPanel = () => {
+  const navigate = useNavigate();
+
+  const handleActionClick = (title: string) => {
+    if (title === "Upload OPS") {
+      navigate("/ops-form");
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="border-b">
@@ -62,6 +71,7 @@ export const ActionPanel = () => {
                 key={action.title}
                 variant="outline"
                 className={`h-auto flex-col items-start p-4 border-2 hover:border-primary/50 transition-all ${action.bgColor}`}
+                onClick={() => handleActionClick(action.title)}
               >
                 <div className="flex items-center gap-3 w-full mb-2">
                   <div className={`p-2 rounded-lg bg-background ${action.color}`}>
