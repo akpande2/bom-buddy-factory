@@ -2,6 +2,7 @@ import { KPICards } from "@/components/purchase-orders/KPICards";
 import { PipelineStages } from "@/components/purchase-orders/PipelineStages";
 import { ActiveRequestsTable } from "@/components/purchase-orders/ActiveRequestsTable";
 import { DocumentRepository } from "@/components/purchase-orders/DocumentRepository";
+import { PRTimeline } from "@/components/purchase-orders/PRTimeline";
 
 export const MainContent = () => {
   return (
@@ -17,6 +18,8 @@ export const MainContent = () => {
         <PipelineStages />
         
         <ActiveRequestsTable />
+        
+        <PRTimeline />
       </div>
       
       <div className="w-80 flex-shrink-0 overflow-auto">
