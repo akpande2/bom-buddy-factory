@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, Pencil, Trash2, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search, Pencil, Trash2, MapPin, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +57,7 @@ const warehouseSchema = z.object({
 });
 
 const Warehouses = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -291,6 +293,9 @@ const Warehouses = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" title="View Details" onClick={() => navigate(`/inventory/warehouses/${warehouse.id}`)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button variant="ghost" size="icon" title="Edit Warehouse" onClick={() => handleEdit(warehouse)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
