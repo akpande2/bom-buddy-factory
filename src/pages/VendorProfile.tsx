@@ -42,6 +42,7 @@ const VendorProfile = () => {
     communication: vendor?.ratings?.communication || 0,
   });
 
+  if (!vendor) {
     return (
       <div className="p-6">
         <div className="text-center">
