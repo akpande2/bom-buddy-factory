@@ -13,6 +13,16 @@ export interface Warehouse {
   itemCount: number;
   status: "Active" | "Inactive";
   type: "Main" | "Regional" | "Transit";
+  bins?: Bin[];
+}
+
+export interface Bin {
+  id: string;
+  binCode: string;
+  rackNumber: string;
+  capacity: number;
+  occupied: number;
+  assignedItems?: { itemId: string; itemName: string; quantity: number }[];
 }
 
 interface WarehouseStore {
