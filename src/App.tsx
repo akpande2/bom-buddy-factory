@@ -16,6 +16,7 @@ import OpsForm from "./pages/OpsForm";
 import PrForm from "./pages/PrForm";
 import LoiForm from "./pages/LoiForm";
 import PoForm from "./pages/PoForm";
+import GrnForm from "./pages/GrnForm";
 import Suppliers from "./pages/Suppliers";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -59,6 +60,7 @@ const App = () => (
                   <Route path="/pr-form" element={<PrForm />} />
                   <Route path="/loi-form" element={<LoiForm />} />
                   <Route path="/po-form" element={<PoForm />} />
+                  <Route path="/grn-form" element={<GrnForm />} />
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
