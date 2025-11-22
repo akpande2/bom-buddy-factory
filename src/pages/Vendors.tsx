@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Search, Eye, Pencil, Trash2, ArrowUpDown, Upload, X, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,7 +92,23 @@ type SortField = keyof Omit<Vendor, "id" | "isoCertificates" | "cancelledCheque"
 type SortDirection = "asc" | "desc";
 
 const Vendors = () => {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState<Vendor[]>([]);
+
+  // Load vendors from localStorage on mount
+  useEffect(() => {
+    const vendorsData = localStorage.getItem("vendors");
+    if (vendorsData) {
+      setVendors(JSON.parse(vendorsData));
+    }
+  }, []);
+
+  // Save vendors to localStorage whenever they change
+  useEffect(() => {
+    if (vendors.length > 0) {
+      localStorage.setItem("vendors", JSON.stringify(vendors));
+    }
+  }, [vendors]);
   const [isOpen, setIsOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [deleteVendor, setDeleteVendor] = useState<Vendor | null>(null);
@@ -761,7 +778,7 @@ const Vendors = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => setViewVendor(vendor)}>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/vendors/${vendor.id}`)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(vendor)}>

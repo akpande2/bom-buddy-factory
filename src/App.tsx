@@ -19,6 +19,7 @@ import PoForm from "./pages/PoForm";
 import GrnForm from "./pages/GrnForm";
 import Suppliers from "./pages/Suppliers";
 import Vendors from "./pages/Vendors";
+import VendorProfile from "./pages/VendorProfile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -64,6 +65,7 @@ const App = () => (
                   <Route path="/grn-form" element={<GrnForm />} />
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/vendors" element={<Vendors />} />
+                  <Route path="/vendors/:id" element={<VendorProfile />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
