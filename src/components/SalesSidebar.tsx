@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, TrendingUp, ShoppingCart, Users, FileText, Settings, FileSpreadsheet, Building2, Box, ReceiptText } from "lucide-react";
+import { Users, FileText, ShoppingBag, Truck, Receipt } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 
 import {
@@ -13,22 +13,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const inventoryItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Bill of Materials", url: "/bom", icon: Package },
-  { title: "Material Usage", url: "/usage", icon: TrendingUp },
-  { title: "Stock Management", url: "/stock", icon: Package },
-  { title: "Inventory Module", url: "/inventory", icon: Box },
-  { title: "Quotations", url: "/quotations", icon: FileSpreadsheet },
-  { title: "Purchase Orders", url: "/purchase-orders", icon: ShoppingCart },
-  { title: "Sales", url: "/sales/leads", icon: ReceiptText },
-  { title: "Suppliers", url: "/suppliers", icon: Users },
-  { title: "Vendor Management", url: "/vendors", icon: Building2 },
-  { title: "Reports", url: "/reports", icon: FileText },
-  { title: "Settings", url: "/settings", icon: Settings },
+const salesItems = [
+  { title: "Leads", url: "/sales/leads", icon: Users },
+  { title: "Quotations", url: "/sales/quotations", icon: FileText },
+  { title: "Sales Orders", url: "/sales/orders", icon: ShoppingBag },
+  { title: "Delivery Challans", url: "/sales/challans", icon: Truck },
+  { title: "Invoices", url: "/sales/invoices", icon: Receipt },
 ];
 
-export function AppSidebar() {
+export function SalesSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -37,11 +30,11 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-muted-foreground">
-            Inventory Management
+            Sales Management
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {inventoryItems.map((item) => (
+              {salesItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={isCollapsed ? item.title : undefined}>
                     <NavLink 
