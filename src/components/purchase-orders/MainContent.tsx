@@ -6,6 +6,7 @@ import { PRTimeline } from "@/components/purchase-orders/PRTimeline";
 import { VendorComparisonCharts } from "@/components/purchase-orders/VendorComparisonCharts";
 import { FilterBar } from "@/components/purchase-orders/FilterBar";
 import { ActionPanel } from "@/components/purchase-orders/ActionPanel";
+import { QuickNavButtons } from "@/components/purchase-orders/QuickNavButtons";
 
 export const MainContent = () => {
   return (
@@ -15,6 +16,8 @@ export const MainContent = () => {
           <h2 className="text-2xl font-bold text-foreground mb-1">Dashboard Overview</h2>
           <p className="text-sm text-muted-foreground">Key procurement metrics at a glance</p>
         </div>
+        
+        <QuickNavButtons />
         
         <KPICards />
         
