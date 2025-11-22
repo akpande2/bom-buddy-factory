@@ -3,6 +3,7 @@ import { PipelineStages } from "@/components/purchase-orders/PipelineStages";
 import { ActiveRequestsTable } from "@/components/purchase-orders/ActiveRequestsTable";
 import { DocumentRepository } from "@/components/purchase-orders/DocumentRepository";
 import { PRTimeline } from "@/components/purchase-orders/PRTimeline";
+import { VendorComparisonCharts } from "@/components/purchase-orders/VendorComparisonCharts";
 
 export const MainContent = () => {
   return (
@@ -18,6 +19,8 @@ export const MainContent = () => {
         <PipelineStages />
         
         <ActiveRequestsTable />
+        
+        <VendorComparisonCharts />
         
         <PRTimeline />
       </div>
