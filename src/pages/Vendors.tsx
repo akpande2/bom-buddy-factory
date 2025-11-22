@@ -99,6 +99,7 @@ const Vendors = () => {
   const [deleteVendorDialog, setDeleteVendorDialog] = useState<Vendor | null>(null);
   const [viewVendor, setViewVendor] = useState<Vendor | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [formData, setFormData] = useState({
@@ -140,15 +141,20 @@ const Vendors = () => {
   const filteredAndSortedVendors = useMemo(() => {
     let filtered = vendors.filter((vendor) => {
       const query = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = 
         vendor.name.toLowerCase().includes(query) ||
         vendor.email.toLowerCase().includes(query) ||
         vendor.contactPerson.toLowerCase().includes(query) ||
         vendor.phone.includes(query) ||
         vendor.gstNumber.toLowerCase().includes(query) ||
         vendor.panNumber.toLowerCase().includes(query) ||
-        vendor.vendorType.toLowerCase().includes(query)
-      );
+        vendor.vendorType.toLowerCase().includes(query);
+      
+      const matchesCategory = 
+        selectedCategory === "all" || 
+        vendor.productCategories?.includes(selectedCategory);
+      
+      return matchesSearch && matchesCategory;
     });
 
     filtered.sort((a, b) => {
@@ -166,7 +172,16 @@ const Vendors = () => {
     });
 
     return filtered;
-  }, [vendors, searchQuery, sortField, sortDirection]);
+  }, [vendors, searchQuery, selectedCategory, sortField, sortDirection]);
+
+  // Get all unique categories
+  const allCategories = useMemo(() => {
+    const categories = new Set<string>();
+    vendors.forEach((vendor) => {
+      vendor.productCategories?.forEach((cat) => categories.add(cat));
+    });
+    return Array.from(categories).sort();
+  }, [vendors]);
 
   const resetForm = () => {
     setFormData({
@@ -790,6 +805,19 @@ const Vendors = () => {
                 className="pl-10"
               />
             </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {allCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {vendors.length > 0 ? (
@@ -809,10 +837,10 @@ const Vendors = () => {
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </TableHead>
+                <TableHead>Product Categories</TableHead>
                 <TableHead>GST Number</TableHead>
                 <TableHead>Contact Person</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead className="cursor-pointer" onClick={() => handleSort("rating")}>
                   <div className="flex items-center gap-1">
                     Rating
@@ -835,10 +863,27 @@ const Vendors = () => {
                   <TableCell>
                     <Badge variant="outline">{vendor.vendorType}</Badge>
                   </TableCell>
+                  <TableCell>
+                    {vendor.productCategories && vendor.productCategories.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 max-w-xs">
+                        {vendor.productCategories.slice(0, 3).map((category) => (
+                          <Badge key={category} variant="secondary" className="text-xs">
+                            {category}
+                          </Badge>
+                        ))}
+                        {vendor.productCategories.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{vendor.productCategories.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{vendor.gstNumber}</TableCell>
                   <TableCell>{vendor.contactPerson}</TableCell>
                   <TableCell>{vendor.phone}</TableCell>
-                  <TableCell>{vendor.email}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <span className="text-yellow-500">★</span>
