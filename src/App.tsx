@@ -14,6 +14,7 @@ import Quotations from "./pages/Quotations";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import OpsForm from "./pages/OpsForm";
 import PrForm from "./pages/PrForm";
+import LoiForm from "./pages/LoiForm";
 import Suppliers from "./pages/Suppliers";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
@@ -55,6 +56,7 @@ const App = () => (
                   <Route path="/purchase-orders" element={<PurchaseOrders />} />
                   <Route path="/ops-form" element={<OpsForm />} />
                   <Route path="/pr-form" element={<PrForm />} />
+                  <Route path="/loi-form" element={<LoiForm />} />
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
