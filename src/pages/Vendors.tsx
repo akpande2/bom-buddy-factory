@@ -126,6 +126,7 @@ const Vendors = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [gstValidationResult, setGstValidationResult] = useState<"valid" | "invalid" | null>(null);
+  const [ifscValidationResult, setIfscValidationResult] = useState<"valid" | "invalid" | null>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -194,6 +195,7 @@ const Vendors = () => {
     setErrors({});
     setEditingVendor(null);
     setGstValidationResult(null);
+    setIfscValidationResult(null);
   };
 
   const validateGST = () => {
@@ -205,6 +207,18 @@ const Vendors = () => {
       toast.success("GST Number is valid!");
     } else {
       toast.error("GST Number is invalid. Please check the format.");
+    }
+  };
+
+  const validateIFSC = () => {
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    const isValid = ifscRegex.test(formData.ifscCode);
+    setIfscValidationResult(isValid ? "valid" : "invalid");
+    
+    if (isValid) {
+      toast.success("IFSC Code is valid!");
+    } else {
+      toast.error("IFSC Code is invalid. Format: 4 letters + 0 + 6 alphanumeric (e.g., SBIN0001234)");
     }
   };
 
@@ -646,12 +660,34 @@ const Vendors = () => {
                     <Label htmlFor="ifscCode">
                       IFSC Code <span className="text-destructive">*</span>
                     </Label>
-                    <Input
-                      id="ifscCode"
-                      placeholder="ABCD0123456"
-                      value={formData.ifscCode}
-                      onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value.toUpperCase() })}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="ifscCode"
+                        placeholder="ABCD0123456"
+                        value={formData.ifscCode}
+                        onChange={(e) => {
+                          setFormData({ ...formData, ifscCode: e.target.value.toUpperCase() });
+                          setIfscValidationResult(null);
+                        }}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={validateIFSC}
+                        disabled={!formData.ifscCode}
+                        className="shrink-0"
+                      >
+                        Validate IFSC
+                      </Button>
+                      {ifscValidationResult === "valid" && (
+                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                      )}
+                      {ifscValidationResult === "invalid" && (
+                        <XCircle className="h-5 w-5 text-destructive shrink-0" />
+                      )}
+                    </div>
                     {errors.ifscCode && <p className="text-sm text-destructive">{errors.ifscCode}</p>}
                   </div>
                 </div>
