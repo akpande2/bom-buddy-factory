@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Warehouse, FileText, RefreshCcw } from "lucide-react";
+import { LayoutDashboard, Package, Warehouse, FileText, RefreshCcw, List } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 
 import {
@@ -16,6 +16,7 @@ import {
 const inventorySubPages = [
   { title: "Inventory Dashboard", url: "/inventory", icon: LayoutDashboard },
   { title: "Item Master", url: "/inventory/item-master", icon: Package },
+  { title: "Items List", url: "/inventory/items", icon: List },
   { title: "Warehouses", url: "/inventory/warehouses", icon: Warehouse },
   { title: "Stock Ledger", url: "/inventory/stock-ledger", icon: FileText },
   { title: "GRN Integration", url: "/inventory/grn-integration", icon: RefreshCcw },
