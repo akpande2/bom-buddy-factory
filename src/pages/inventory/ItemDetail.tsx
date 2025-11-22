@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Edit, Package, TrendingUp, FileText, History, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, Package, TrendingUp, FileText, History, DollarSign, QrCode } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -206,9 +207,9 @@ const ItemDetail = () => {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Item Details */}
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Item Details</CardTitle>
             <CardDescription>Complete item information</CardDescription>
@@ -258,6 +259,52 @@ const ItemDetail = () => {
           </CardContent>
         </Card>
 
+        {/* QR Code */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              <CardTitle>Item QR Code</CardTitle>
+            </div>
+            <CardDescription>Scan to identify item</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <div className="p-4 bg-white rounded-lg border-2 border-border">
+              <QRCodeSVG
+                value={JSON.stringify({
+                  sku: item.sku,
+                  name: item.itemName,
+                  hsn: item.hsnSacCode,
+                })}
+                size={180}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+            <div className="text-center text-sm space-y-1">
+              <p className="font-mono font-semibold">{item.sku}</p>
+              <p className="text-muted-foreground">{item.itemName}</p>
+            </div>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => {
+              const canvas = document.querySelector('svg');
+              if (canvas) {
+                const svgData = new XMLSerializer().serializeToString(canvas);
+                const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `QR-${item.sku}.svg`;
+                link.click();
+                URL.revokeObjectURL(url);
+              }
+            }}>
+              Download QR Code
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* GST & HSN Details */}
         <Card>
           <CardHeader>
