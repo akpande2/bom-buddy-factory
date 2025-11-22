@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Eye, Pencil, Trash2, ArrowUpDown, Upload, X, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, ArrowUpDown, Upload, X, CheckCircle2, XCircle, PieChart, TrendingUp, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -86,6 +88,12 @@ type Vendor = z.infer<typeof vendorSchema> & {
   id: string;
   isoCertificatesName?: string;
   cancelledChequeName?: string;
+  ratings?: {
+    deliveryTimeliness: number;
+    quality: number;
+    pricingConsistency: number;
+    communication: number;
+  };
 };
 
 type SortField = keyof Omit<Vendor, "id" | "isoCertificates" | "cancelledCheque" | "isoCertificatesName" | "cancelledChequeName">;
@@ -342,6 +350,39 @@ const Vendors = () => {
     link.download = filename;
     link.click();
   };
+
+  // Analytics data
+  const vendorsByCategory = useMemo(() => {
+    const categories: Record<string, number> = {};
+    vendors.forEach((vendor) => {
+      categories[vendor.vendorType] = (categories[vendor.vendorType] || 0) + 1;
+    });
+    return categories;
+  }, [vendors]);
+
+  const topRatedVendors = useMemo(() => {
+    const calculateOverallRating = (v: Vendor) => {
+      if (!v.ratings) return v.rating || 0;
+      const values = [
+        v.ratings.deliveryTimeliness,
+        v.ratings.quality,
+        v.ratings.pricingConsistency,
+        v.ratings.communication,
+      ].filter((val) => val > 0);
+      if (values.length === 0) return v.rating || 0;
+      return Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(1));
+    };
+
+    return [...vendors]
+      .map((v) => ({ ...v, overallRating: calculateOverallRating(v) }))
+      .sort((a, b) => b.overallRating - a.overallRating)
+      .slice(0, 5);
+  }, [vendors]);
+
+  const expiringDocuments = useMemo(() => {
+    // Placeholder: vendors without key documents
+    return vendors.filter((v) => !v.isoCertificates || !v.cancelledCheque).slice(0, 5);
+  }, [vendors]);
 
   return (
     <div className="p-6 space-y-6">
@@ -708,19 +749,26 @@ const Vendors = () => {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search vendors..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList>
+          <TabsTrigger value="list">Vendor List</TabsTrigger>
+          <TabsTrigger value="analytics">Vendor Analytics</TabsTrigger>
+        </TabsList>
 
-      {vendors.length > 0 ? (
+        <TabsContent value="list" className="space-y-4 mt-6">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search vendors..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {vendors.length > 0 ? (
         <div className="rounded-md border bg-card">
           <Table>
             <TableHeader>
@@ -794,11 +842,182 @@ const Vendors = () => {
             </TableBody>
           </Table>
         </div>
-      ) : (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground">No vendors added yet. Click "Add New Vendor" to get started.</p>
-        </div>
-      )}
+          ) : (
+            <div className="rounded-lg border border-dashed p-12 text-center">
+              <p className="text-muted-foreground">No vendors added yet. Click "Add New Vendor" to get started.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6 mt-6">
+          {vendors.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Vendor Category Split */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="h-5 w-5 text-primary" />
+                    Vendor Category Split
+                  </CardTitle>
+                  <CardDescription>Distribution by vendor type</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Simple Donut Chart */}
+                    <div className="flex justify-center">
+                      <div className="relative w-48 h-48">
+                        <svg viewBox="0 0 100 100" className="transform -rotate-90">
+                          {Object.entries(vendorsByCategory).map((entry, index) => {
+                            const [category, count] = entry;
+                            const total = Object.values(vendorsByCategory).reduce((a, b) => a + b, 0);
+                            const percentage = (count / total) * 100;
+                            const colors = ["#3b82f6", "#10b981", "#f59e0b"];
+                            const offset = Object.values(vendorsByCategory)
+                              .slice(0, index)
+                              .reduce((sum, c) => sum + (c / total) * 100, 0);
+
+                            return (
+                              <circle
+                                key={category}
+                                cx="50"
+                                cy="50"
+                                r="35"
+                                fill="none"
+                                stroke={colors[index % colors.length]}
+                                strokeWidth="20"
+                                strokeDasharray={`${percentage * 2.2} 220`}
+                                strokeDashoffset={-offset * 2.2}
+                                className="transition-all"
+                              />
+                            );
+                          })}
+                          <circle cx="50" cy="50" r="25" fill="hsl(var(--background))" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold">{vendors.length}</div>
+                            <div className="text-xs text-muted-foreground">Total</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="space-y-2">
+                      {Object.entries(vendorsByCategory).map((entry, index) => {
+                        const [category, count] = entry;
+                        const colors = ["bg-blue-500", "bg-green-500", "bg-amber-500"];
+                        const total = Object.values(vendorsByCategory).reduce((a, b) => a + b, 0);
+                        const percentage = ((count / total) * 100).toFixed(0);
+
+                        return (
+                          <div key={category} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`} />
+                              <span>{category}</span>
+                            </div>
+                            <span className="font-medium">
+                              {count} ({percentage}%)
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top-Rated Vendors */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    Top-Rated Vendors
+                  </CardTitle>
+                  <CardDescription>Highest performing vendors</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {topRatedVendors.length > 0 ? (
+                    <div className="space-y-4">
+                      {topRatedVendors.map((vendor, index) => (
+                        <div key={vendor.id} className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{vendor.name}</p>
+                            <p className="text-xs text-muted-foreground">{vendor.vendorType}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-500">★</span>
+                            <span className="text-sm font-bold">{vendor.overallRating.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {topRatedVendors.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No rated vendors yet</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No vendors found</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Vendors with Expiring Documents */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    Incomplete Documents
+                  </CardTitle>
+                  <CardDescription>Vendors missing key documents</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {expiringDocuments.length > 0 ? (
+                    <div className="space-y-3">
+                      {expiringDocuments.map((vendor) => (
+                        <div key={vendor.id} className="p-3 rounded-lg border bg-muted/30">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{vendor.name}</p>
+                              <p className="text-xs text-muted-foreground">{vendor.vendorType}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {!vendor.isoCertificates && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                No ISO
+                              </span>
+                            )}
+                            {!vendor.cancelledCheque && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                No Cheque
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                        <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <p className="text-sm font-medium">All documents complete!</p>
+                      <p className="text-xs text-muted-foreground mt-1">All vendors have uploaded required documents</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed p-12 text-center">
+              <p className="text-muted-foreground">Add vendors to view analytics</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* View Dialog */}
       <Dialog open={!!viewVendor} onOpenChange={() => setViewVendor(null)}>
