@@ -56,6 +56,8 @@ export const ActionPanel = () => {
       navigate("/ops-form");
     } else if (title === "Create New PR") {
       navigate("/pr-form");
+    } else if (title === "Raise PO") {
+      navigate("/po-form");
     }
   };
 
