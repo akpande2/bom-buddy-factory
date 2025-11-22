@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, TrendingUp, ShoppingCart, Users, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, ShoppingCart, Users, FileText, Settings, FileSpreadsheet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 
 import {
@@ -18,6 +18,7 @@ const inventoryItems = [
   { title: "Bill of Materials", url: "/bom", icon: Package },
   { title: "Material Usage", url: "/usage", icon: TrendingUp },
   { title: "Stock Management", url: "/stock", icon: Package },
+  { title: "Quotations", url: "/quotations", icon: FileSpreadsheet },
   { title: "Purchase Orders", url: "/purchase-orders", icon: ShoppingCart },
   { title: "Suppliers", url: "/suppliers", icon: Users },
   { title: "Reports", url: "/reports", icon: FileText },
