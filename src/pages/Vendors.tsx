@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, Eye, Pencil, Trash2, ArrowUpDown, Upload, X } from "lucide-react";
+import { Plus, Search, Eye, Pencil, Trash2, ArrowUpDown, Upload, X, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -123,6 +123,7 @@ const Vendors = () => {
     status: "Active" as "Active" | "Inactive",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [gstValidationResult, setGstValidationResult] = useState<"valid" | "invalid" | null>(null);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -190,6 +191,19 @@ const Vendors = () => {
     });
     setErrors({});
     setEditingVendor(null);
+    setGstValidationResult(null);
+  };
+
+  const validateGST = () => {
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const isValid = gstRegex.test(formData.gstNumber);
+    setGstValidationResult(isValid ? "valid" : "invalid");
+    
+    if (isValid) {
+      toast.success("GST Number is valid!");
+    } else {
+      toast.error("GST Number is invalid. Please check the format.");
+    }
   };
 
   const handleFileUpload = async (
@@ -447,12 +461,43 @@ const Vendors = () => {
                     <Label htmlFor="gstNumber">
                       GST Number <span className="text-destructive">*</span>
                     </Label>
-                    <Input
-                      id="gstNumber"
-                      placeholder="22AAAAA0000A1Z5"
-                      value={formData.gstNumber}
-                      onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value.toUpperCase() })}
-                    />
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Input
+                          id="gstNumber"
+                          placeholder="22AAAAA0000A1Z5"
+                          value={formData.gstNumber}
+                          onChange={(e) => {
+                            setFormData({ ...formData, gstNumber: e.target.value.toUpperCase() });
+                            setGstValidationResult(null);
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={validateGST}
+                        disabled={!formData.gstNumber}
+                        className="shrink-0"
+                      >
+                        Validate GST
+                      </Button>
+                    </div>
+                    {gstValidationResult && (
+                      <div className={`flex items-center gap-2 text-sm ${gstValidationResult === "valid" ? "text-green-600" : "text-destructive"}`}>
+                        {gstValidationResult === "valid" ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>✓ Valid GST format</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-4 w-4" />
+                            <span>✕ Invalid GST format</span>
+                          </>
+                        )}
+                      </div>
+                    )}
                     {errors.gstNumber && <p className="text-sm text-destructive">{errors.gstNumber}</p>}
                   </div>
                   <div className="space-y-2">
