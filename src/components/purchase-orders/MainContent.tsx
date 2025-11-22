@@ -1,5 +1,6 @@
 import { KPICards } from "@/components/purchase-orders/KPICards";
 import { PipelineStages } from "@/components/purchase-orders/PipelineStages";
+import { ActiveRequestsTable } from "@/components/purchase-orders/ActiveRequestsTable";
 
 export const MainContent = () => {
   return (
@@ -12,6 +13,8 @@ export const MainContent = () => {
       <KPICards />
       
       <PipelineStages />
+      
+      <ActiveRequestsTable />
     </div>
   );
 };
