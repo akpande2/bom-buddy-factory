@@ -31,6 +31,7 @@ import WarehouseDetail from "./pages/inventory/WarehouseDetail";
 import StockLedger from "./pages/inventory/StockLedger";
 import GRNIntegration from "./pages/inventory/GRNIntegration";
 import Items from "./pages/inventory/Items";
+import ItemDetail from "./pages/inventory/ItemDetail";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
                     <Route index element={<InventoryDashboard />} />
                     <Route path="item-master" element={<ItemMaster />} />
                     <Route path="items" element={<Items />} />
+                    <Route path="items/:id" element={<ItemDetail />} />
                     <Route path="warehouses" element={<Warehouses />} />
                     <Route path="warehouses/:id" element={<WarehouseDetail />} />
                     <Route path="stock-ledger" element={<StockLedger />} />

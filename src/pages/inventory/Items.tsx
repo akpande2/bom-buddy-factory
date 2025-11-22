@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, Eye, Pencil, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,6 +64,7 @@ const itemSchema = z.object({
 });
 
 const Items = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [gstFilter, setGstFilter] = useState("all");
@@ -362,7 +364,12 @@ const Items = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" title="View Details">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="View Details"
+                            onClick={() => navigate(`/inventory/items/${item.id}`)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" title="Edit Item" onClick={() => handleEdit(item)}>
