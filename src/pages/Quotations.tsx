@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, FileText, Download, Send } from "lucide-react";
+import { Plus, Trash2, FileText, Download, Send, Pencil } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -41,6 +41,7 @@ interface Quotation {
 
 const Quotations = () => {
   const [openNewQuotation, setOpenNewQuotation] = useState(false);
+  const [editingQuotationId, setEditingQuotationId] = useState<string | null>(null);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -48,7 +49,7 @@ const Quotations = () => {
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [existingQuotations] = useState<Quotation[]>([
+  const [existingQuotations, setExistingQuotations] = useState<Quotation[]>([
     {
       id: "1",
       quotationNo: "QT-2024-001",
@@ -120,6 +121,27 @@ const Quotations = () => {
     return { subtotal, taxAmount, grandTotal };
   };
 
+  const handleEditQuotation = (quotation: Quotation) => {
+    setEditingQuotationId(quotation.id);
+    setCustomerName(quotation.customerName);
+    setCustomerEmail(quotation.customerEmail);
+    setCustomerPhone(quotation.customerPhone);
+    setValidUntil(quotation.validUntil);
+    setNotes(quotation.notes || "");
+    setQuotationItems(quotation.items);
+    setOpenNewQuotation(true);
+  };
+
+  const resetForm = () => {
+    setQuotationItems([]);
+    setCustomerName("");
+    setCustomerEmail("");
+    setCustomerPhone("");
+    setValidUntil("");
+    setNotes("");
+    setEditingQuotationId(null);
+  };
+
   const handleCreateQuotation = () => {
     if (!customerName || !customerEmail || quotationItems.length === 0) {
       toast({
@@ -130,18 +152,65 @@ const Quotations = () => {
       return;
     }
 
-    toast({
-      title: "Quotation Created",
-      description: `Quotation for ${customerName} has been created successfully.`,
-    });
+    const { subtotal, taxAmount, grandTotal } = calculateTotals();
+
+    if (editingQuotationId) {
+      // Update existing quotation
+      setExistingQuotations(
+        existingQuotations.map((q) =>
+          q.id === editingQuotationId
+            ? {
+                ...q,
+                customerName,
+                customerEmail,
+                customerPhone,
+                validUntil,
+                notes,
+                items: quotationItems,
+                subtotal,
+                taxAmount,
+                grandTotal,
+              }
+            : q
+        )
+      );
+      toast({
+        title: "Quotation Updated",
+        description: `Quotation for ${customerName} has been updated successfully.`,
+      });
+    } else {
+      // Create new quotation
+      const newQuotation: Quotation = {
+        id: Date.now().toString(),
+        quotationNo: `QT-2024-${String(existingQuotations.length + 1).padStart(3, "0")}`,
+        customerName,
+        customerEmail,
+        customerPhone,
+        quotationDate: new Date().toISOString().split("T")[0],
+        validUntil,
+        items: quotationItems,
+        subtotal,
+        taxAmount,
+        grandTotal,
+        status: "Draft",
+        notes,
+      };
+      setExistingQuotations([...existingQuotations, newQuotation]);
+      toast({
+        title: "Quotation Created",
+        description: `Quotation for ${customerName} has been created successfully.`,
+      });
+    }
+
     setOpenNewQuotation(false);
-    // Reset form
-    setQuotationItems([]);
-    setCustomerName("");
-    setCustomerEmail("");
-    setCustomerPhone("");
-    setValidUntil("");
-    setNotes("");
+    resetForm();
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setOpenNewQuotation(open);
+    if (!open) {
+      resetForm();
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -292,7 +361,7 @@ const Quotations = () => {
       </div>
 
       <div className="flex justify-end mb-4">
-        <Dialog open={openNewQuotation} onOpenChange={setOpenNewQuotation}>
+        <Dialog open={openNewQuotation} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -301,8 +370,12 @@ const Quotations = () => {
           </DialogTrigger>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New Quotation</DialogTitle>
-              <DialogDescription>Build a detailed quotation for your customer</DialogDescription>
+              <DialogTitle>{editingQuotationId ? "Edit Quotation" : "Create New Quotation"}</DialogTitle>
+              <DialogDescription>
+                {editingQuotationId
+                  ? "Update the quotation details"
+                  : "Build a detailed quotation for your customer"}
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">
               {/* Customer Details */}
@@ -503,10 +576,12 @@ const Quotations = () => {
               </Card>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpenNewQuotation(false)}>
+              <Button variant="outline" onClick={() => handleDialogClose(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateQuotation}>Create Quotation</Button>
+              <Button onClick={handleCreateQuotation}>
+                {editingQuotationId ? "Update Quotation" : "Create Quotation"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -551,6 +626,14 @@ const Quotations = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditQuotation(quotation)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
                       <Button variant="outline" size="sm">
                         <FileText className="h-4 w-4 mr-1" />
                         View
