@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, FileText, Upload, Download, Plus, X, Eye, FileCheck } from "lucide-react";
+import { ArrowLeft, Pencil, FileText, Upload, Download, Plus, X, Eye, FileCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,12 @@ interface Vendor {
     isoCertificates?: { id: string; name: string; uploadDate: string; data: string }[];
     cancelledCheque?: { name: string; uploadDate: string; data: string };
   };
+  ratings?: {
+    deliveryTimeliness: number;
+    quality: number;
+    pricingConsistency: number;
+    communication: number;
+  };
 }
 
 const VendorProfile = () => {
@@ -68,11 +74,18 @@ const VendorProfile = () => {
   const [isDocDialogOpen, setIsDocDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
   const [isVaultUploadOpen, setIsVaultUploadOpen] = useState(false);
+  const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<{ name: string; data: string } | null>(null);
   const [vaultDocType, setVaultDocType] = useState<"gst" | "msme" | "iso" | "cheque">("gst");
   const [newNote, setNewNote] = useState("");
   const [newTag, setNewTag] = useState("");
   const [uploadingDoc, setUploadingDoc] = useState<{ name: string; data: string } | null>(null);
+  const [ratings, setRatings] = useState({
+    deliveryTimeliness: vendor?.ratings?.deliveryTimeliness || 0,
+    quality: vendor?.ratings?.quality || 0,
+    pricingConsistency: vendor?.ratings?.pricingConsistency || 0,
+    communication: vendor?.ratings?.communication || 0,
+  });
 
   if (!vendor) {
     return (
@@ -294,6 +307,42 @@ const VendorProfile = () => {
     setIsVaultUploadOpen(true);
   };
 
+  const calculateOverallRating = (ratingsObj: typeof ratings) => {
+    const values = Object.values(ratingsObj).filter((v) => v > 0);
+    if (values.length === 0) return 0;
+    return Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(1));
+  };
+
+  const handleSaveRatings = () => {
+    const updatedVendor = {
+      ...vendor,
+      ratings,
+    };
+    updateVendor(updatedVendor);
+    setIsRatingDialogOpen(false);
+    toast.success("Ratings updated successfully");
+  };
+
+  const RatingStars = ({ value, onChange, readonly = false }: { value: number; onChange?: (val: number) => void; readonly?: boolean }) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            disabled={readonly}
+            onClick={() => !readonly && onChange?.(star)}
+            className={`${readonly ? "cursor-default" : "cursor-pointer hover:scale-110"} transition-transform`}
+          >
+            <Star className={`h-5 w-5 ${star <= value ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"}`} />
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  const overallRating = vendor?.ratings ? calculateOverallRating(vendor.ratings) : 0;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -471,6 +520,107 @@ const VendorProfile = () => {
                   <p className="font-medium font-mono text-sm">{vendor.ifscCode}</p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Vendor Ratings Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500" />
+                    Vendor Ratings
+                  </CardTitle>
+                  <CardDescription>Performance metrics and evaluation</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setIsRatingDialogOpen(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Ratings
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Overall Rating */}
+              <div className="text-center p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
+                <Label className="text-sm text-muted-foreground">Overall Score</Label>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <span className="text-4xl font-bold text-primary">{overallRating.toFixed(1)}</span>
+                  <div className="flex flex-col items-start">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-4 w-4 ${star <= Math.round(overallRating) ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-muted-foreground">out of 5.0</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Individual Ratings */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Delivery Timeliness</Label>
+                    <p className="text-xs text-muted-foreground">On-time delivery performance</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RatingStars value={vendor.ratings?.deliveryTimeliness || 0} readonly />
+                    <span className="text-sm font-medium w-8">{vendor.ratings?.deliveryTimeliness || 0}.0</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Quality</Label>
+                    <p className="text-xs text-muted-foreground">Product/service quality standards</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RatingStars value={vendor.ratings?.quality || 0} readonly />
+                    <span className="text-sm font-medium w-8">{vendor.ratings?.quality || 0}.0</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Pricing Consistency</Label>
+                    <p className="text-xs text-muted-foreground">Price stability and fairness</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RatingStars value={vendor.ratings?.pricingConsistency || 0} readonly />
+                    <span className="text-sm font-medium w-8">{vendor.ratings?.pricingConsistency || 0}.0</span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Communication</Label>
+                    <p className="text-xs text-muted-foreground">Responsiveness and clarity</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RatingStars value={vendor.ratings?.communication || 0} readonly />
+                    <span className="text-sm font-medium w-8">{vendor.ratings?.communication || 0}.0</span>
+                  </div>
+                </div>
+              </div>
+
+              {!vendor.ratings && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground mb-3">No ratings added yet</p>
+                  <Button variant="outline" size="sm" onClick={() => setIsRatingDialogOpen(true)}>
+                    Add Ratings
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -972,6 +1122,78 @@ const VendorProfile = () => {
                 Download
               </Button>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Ratings Dialog */}
+      <Dialog open={isRatingDialogOpen} onOpenChange={setIsRatingDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Vendor Ratings</DialogTitle>
+            <DialogDescription>Rate the vendor's performance across different metrics</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Overall Preview */}
+            <div className="text-center p-4 border rounded-lg bg-muted/30">
+              <Label className="text-sm text-muted-foreground">Overall Score</Label>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <span className="text-3xl font-bold text-primary">{calculateOverallRating(ratings).toFixed(1)}</span>
+                <span className="text-sm text-muted-foreground">out of 5.0</span>
+              </div>
+            </div>
+
+            {/* Rating Categories */}
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Delivery Timeliness</Label>
+                <p className="text-xs text-muted-foreground mb-2">Rate their on-time delivery performance</p>
+                <div className="flex items-center gap-3">
+                  <RatingStars value={ratings.deliveryTimeliness} onChange={(val) => setRatings({ ...ratings, deliveryTimeliness: val })} />
+                  <span className="text-sm font-medium">{ratings.deliveryTimeliness}.0</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Quality</Label>
+                <p className="text-xs text-muted-foreground mb-2">Rate their product/service quality standards</p>
+                <div className="flex items-center gap-3">
+                  <RatingStars value={ratings.quality} onChange={(val) => setRatings({ ...ratings, quality: val })} />
+                  <span className="text-sm font-medium">{ratings.quality}.0</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Pricing Consistency</Label>
+                <p className="text-xs text-muted-foreground mb-2">Rate their price stability and fairness</p>
+                <div className="flex items-center gap-3">
+                  <RatingStars value={ratings.pricingConsistency} onChange={(val) => setRatings({ ...ratings, pricingConsistency: val })} />
+                  <span className="text-sm font-medium">{ratings.pricingConsistency}.0</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Communication</Label>
+                <p className="text-xs text-muted-foreground mb-2">Rate their responsiveness and clarity</p>
+                <div className="flex items-center gap-3">
+                  <RatingStars value={ratings.communication} onChange={(val) => setRatings({ ...ratings, communication: val })} />
+                  <span className="text-sm font-medium">{ratings.communication}.0</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsRatingDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveRatings}>Save Ratings</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
