@@ -23,6 +23,12 @@ import VendorProfile from "./pages/VendorProfile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import InventoryLayout from "./pages/inventory/InventoryLayout";
+import InventoryDashboard from "./pages/inventory/InventoryDashboard";
+import ItemMaster from "./pages/inventory/ItemMaster";
+import Warehouses from "./pages/inventory/Warehouses";
+import StockLedger from "./pages/inventory/StockLedger";
+import GRNIntegration from "./pages/inventory/GRNIntegration";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +72,13 @@ const App = () => (
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/vendors" element={<Vendors />} />
                   <Route path="/vendors/:id" element={<VendorProfile />} />
+                  <Route path="/inventory" element={<InventoryLayout />}>
+                    <Route index element={<InventoryDashboard />} />
+                    <Route path="item-master" element={<ItemMaster />} />
+                    <Route path="warehouses" element={<Warehouses />} />
+                    <Route path="stock-ledger" element={<StockLedger />} />
+                    <Route path="grn-integration" element={<GRNIntegration />} />
+                  </Route>
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
