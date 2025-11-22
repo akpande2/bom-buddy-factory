@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, FileText, Download, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface QuotationItem {
   id: string;
@@ -155,6 +157,129 @@ const Quotations = () => {
       default:
         return "bg-muted text-muted-foreground";
     }
+  };
+
+  const generatePDF = (quotation: Quotation) => {
+    const doc = new jsPDF();
+
+    // Company Header
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Fan Factory MRP", 105, 20, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("123 Industrial Area, Manufacturing Hub", 105, 28, { align: "center" });
+    doc.text("Phone: +91 12345 67890 | Email: sales@fanfactory.com", 105, 33, { align: "center" });
+    
+    // Title
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("QUOTATION", 105, 45, { align: "center" });
+    
+    // Quotation Details
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Quotation No: ${quotation.quotationNo}`, 20, 55);
+    doc.text(`Date: ${quotation.quotationDate}`, 20, 62);
+    doc.text(`Valid Until: ${quotation.validUntil}`, 20, 69);
+    
+    // Customer Details
+    doc.setFont("helvetica", "bold");
+    doc.text("Bill To:", 20, 80);
+    doc.setFont("helvetica", "normal");
+    doc.text(quotation.customerName, 20, 87);
+    doc.text(quotation.customerEmail, 20, 94);
+    if (quotation.customerPhone) {
+      doc.text(quotation.customerPhone, 20, 101);
+    }
+    
+    // Items Table
+    const tableData = quotation.items.map((item) => [
+      item.itemDescription,
+      item.partNumber,
+      item.quantity.toString(),
+      `₹${item.unitPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+      `${item.taxPercent}%`,
+      `₹${item.total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+    ]);
+
+    autoTable(doc, {
+      startY: quotation.customerPhone ? 110 : 103,
+      head: [["Description", "Part No.", "Qty", "Unit Price", "Tax", "Total"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: "bold" },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 30 },
+      },
+    });
+
+    // Get final Y position after table
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+    // Totals
+    doc.setFont("helvetica", "normal");
+    doc.text(`Subtotal:`, 130, finalY);
+    doc.text(`₹${quotation.subtotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, 170, finalY, { align: "right" });
+    
+    doc.text(`Tax Amount:`, 130, finalY + 7);
+    doc.text(`₹${quotation.taxAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, 170, finalY + 7, { align: "right" });
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`Grand Total:`, 130, finalY + 15);
+    doc.text(`₹${quotation.grandTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`, 170, finalY + 15, { align: "right" });
+
+    // Notes
+    if (quotation.notes) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("Notes:", 20, finalY + 30);
+      doc.setFont("helvetica", "normal");
+      const splitNotes = doc.splitTextToSize(quotation.notes, 170);
+      doc.text(splitNotes, 20, finalY + 37);
+    }
+
+    // Terms and Conditions
+    const termsY = quotation.notes ? finalY + 60 : finalY + 35;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text("Terms & Conditions:", 20, termsY);
+    doc.setFont("helvetica", "normal");
+    const terms = [
+      "1. Payment: 50% advance, 50% on delivery",
+      "2. Delivery: As per agreed schedule",
+      "3. Warranty: As specified for each item",
+      "4. Prices are subject to change without notice",
+      "5. This quotation is valid for the period mentioned above",
+    ];
+    
+    let termsYPosition = termsY + 5;
+    terms.forEach((term) => {
+      doc.text(term, 20, termsYPosition);
+      termsYPosition += 5;
+    });
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.text("Thank you for your business!", 105, 280, { align: "center" });
+    doc.text("This is a computer-generated quotation and does not require a signature.", 105, 285, { align: "center" });
+
+    // Save PDF
+    doc.save(`Quotation_${quotation.quotationNo}.pdf`);
+    
+    toast({
+      title: "PDF Generated",
+      description: `Quotation ${quotation.quotationNo} has been downloaded.`,
+    });
   };
 
   const { subtotal, taxAmount, grandTotal } = calculateTotals();
@@ -430,7 +555,11 @@ const Quotations = () => {
                         <FileText className="h-4 w-4 mr-1" />
                         View
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => generatePDF(quotation)}
+                      >
                         <Download className="h-4 w-4 mr-1" />
                         PDF
                       </Button>
