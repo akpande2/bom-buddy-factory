@@ -21,23 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { z } from "zod";
-
-interface Vendor {
-  id: string;
-  name: string;
-  gstNumber: string;
-  rating: number;
-  ratings?: {
-    deliveryTimeliness: number;
-    quality: number;
-    pricingConsistency: number;
-    communication: number;
-  };
-  status: "Active" | "Inactive";
-  email: string;
-  phone: string;
-  contactPerson: string;
-}
+import { useVendorStore, type Vendor } from "@/stores/vendorStore";
 
 interface VendorSelectionProps {
   selectedVendorId?: string;
@@ -53,7 +37,8 @@ const quickAddVendorSchema = z.object({
 });
 
 export const VendorSelection = ({ selectedVendorId, onVendorSelect }: VendorSelectionProps) => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const { getActiveVendors, addVendor, getVendorById } = useVendorStore();
+  const vendors = getActiveVendors();
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -65,24 +50,16 @@ export const VendorSelection = ({ selectedVendorId, onVendorSelect }: VendorSele
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load vendors from localStorage
+  // Set selected vendor if provided
   useEffect(() => {
-    const vendorsData = localStorage.getItem("vendors");
-    if (vendorsData) {
-      const allVendors: Vendor[] = JSON.parse(vendorsData);
-      const activeVendors = allVendors.filter((v) => v.status === "Active");
-      setVendors(activeVendors);
-
-      // Set selected vendor if provided
-      if (selectedVendorId) {
-        const vendor = activeVendors.find((v) => v.id === selectedVendorId);
-        if (vendor) {
-          setSelectedVendor(vendor);
-          onVendorSelect?.(vendor);
-        }
+    if (selectedVendorId) {
+      const vendor = getVendorById(selectedVendorId);
+      if (vendor) {
+        setSelectedVendor(vendor);
+        onVendorSelect?.(vendor);
       }
     }
-  }, [selectedVendorId, onVendorSelect]);
+  }, [selectedVendorId, getVendorById, onVendorSelect]);
 
   const handleVendorChange = (vendorId: string) => {
     const vendor = vendors.find((v) => v.id === vendorId);
@@ -107,22 +84,25 @@ export const VendorSelection = ({ selectedVendorId, onVendorSelect }: VendorSele
       const newVendor: Vendor = {
         id: Date.now().toString(),
         name: validatedData.name,
-        gstNumber: validatedData.gstNumber,
-        email: validatedData.email,
-        phone: validatedData.phone,
+        vendorType: "Manufacturer",
         contactPerson: validatedData.contactPerson,
+        phone: validatedData.phone,
+        email: validatedData.email,
+        address: "",
+        gstNumber: validatedData.gstNumber,
+        panNumber: "",
+        bankName: "",
+        branchName: "",
+        accountNumber: "",
+        ifscCode: "",
         rating: 3,
         status: "Active",
       };
 
-      // Save to localStorage
-      const vendorsData = localStorage.getItem("vendors");
-      const allVendors = vendorsData ? JSON.parse(vendorsData) : [];
-      const updatedVendors = [...allVendors, newVendor];
-      localStorage.setItem("vendors", JSON.stringify(updatedVendors));
+      // Save to store
+      addVendor(newVendor);
 
       // Update state
-      setVendors([...vendors, newVendor]);
       setSelectedVendor(newVendor);
       onVendorSelect?.(newVendor);
 
