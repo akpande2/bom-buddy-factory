@@ -54,6 +54,8 @@ export const ActionPanel = () => {
   const handleActionClick = (title: string) => {
     if (title === "Upload OPS") {
       navigate("/ops-form");
+    } else if (title === "Create New PR") {
+      navigate("/pr-form");
     }
   };
 
