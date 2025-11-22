@@ -33,6 +33,14 @@ interface DocumentFormWithPDFProps {
   additionalContent?: (data: Record<string, any>) => string;
 }
 
+interface StoredDocument {
+  type: string;
+  title: string;
+  timestamp: number;
+  data: string; // base64 encoded PDF
+  formData: Record<string, any>;
+}
+
 export const DocumentFormWithPDF = ({
   schema,
   title,
@@ -40,6 +48,40 @@ export const DocumentFormWithPDF = ({
   additionalContent,
 }: DocumentFormWithPDFProps) => {
   const { register, handleSubmit, setValue, watch } = useForm();
+
+  const saveToLocalStorage = (blob: Blob, formData: Record<string, any>, documentType: string) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64data = reader.result as string;
+      
+      const storedDocs = localStorage.getItem("procurement_documents");
+      const docs: StoredDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
+      
+      const newDoc: StoredDocument = {
+        type: documentType,
+        title: title,
+        timestamp: Date.now(),
+        data: base64data,
+        formData: formData,
+      };
+      
+      // Remove old document of same type if exists
+      const filteredDocs = docs.filter(doc => doc.type !== documentType);
+      filteredDocs.push(newDoc);
+      
+      localStorage.setItem("procurement_documents", JSON.stringify(filteredDocs));
+    };
+    reader.readAsDataURL(blob);
+  };
+
+  const getDocumentType = (title: string): string => {
+    if (title.includes("OPS")) return "OPS";
+    if (title.includes("PR")) return "PR";
+    if (title.includes("LOI")) return "LOI";
+    if (title.includes("PO") && !title.includes("OPS")) return "PO";
+    if (title.includes("GRN")) return "GRN";
+    return "OTHER";
+  };
 
   const generatePDF = (formData: Record<string, any>) => {
     const doc = new jsPDF();
@@ -109,6 +151,10 @@ export const DocumentFormWithPDF = ({
     // Generate blob
     const blob = doc.output("blob");
     
+    // Save to localStorage
+    const documentType = getDocumentType(title);
+    saveToLocalStorage(blob, formData, documentType);
+    
     // Download
     doc.save(`${title.replace(/\s+/g, "_")}_${Date.now()}.pdf`);
     
@@ -117,7 +163,7 @@ export const DocumentFormWithPDF = ({
       onPDFGenerated(blob, formData);
     }
     
-    toast.success("PDF generated successfully!");
+    toast.success("PDF generated and saved successfully!");
   };
 
   const onSubmit = (data: Record<string, any>) => {
