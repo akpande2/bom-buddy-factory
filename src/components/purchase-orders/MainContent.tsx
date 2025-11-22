@@ -5,6 +5,7 @@ import { DocumentRepository } from "@/components/purchase-orders/DocumentReposit
 import { PRTimeline } from "@/components/purchase-orders/PRTimeline";
 import { VendorComparisonCharts } from "@/components/purchase-orders/VendorComparisonCharts";
 import { FilterBar } from "@/components/purchase-orders/FilterBar";
+import { ActionPanel } from "@/components/purchase-orders/ActionPanel";
 
 export const MainContent = () => {
   return (
@@ -18,6 +19,8 @@ export const MainContent = () => {
         <KPICards />
         
         <PipelineStages />
+        
+        <ActionPanel />
         
         <FilterBar />
         
