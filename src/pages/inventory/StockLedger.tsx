@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useInventoryStore } from "@/stores/inventoryStore";
 import {
   Select,
   SelectContent,
@@ -74,18 +75,10 @@ const stockOutSchema = z.object({
 
 const StockLedger = () => {
   const location = useLocation();
+  const { transactions, items, warehouses, recordTransaction } = useInventoryStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<string>("all");
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
-  const [entries, setEntries] = useState<LedgerEntry[]>([
-    { id: "1", date: "2025-11-22", itemCode: "MTR-001", itemName: "Motor Assembly XL", transactionType: "GRN", quantityIn: 50, quantityOut: 0, warehouse: "WH-001", balance: 145, remarks: "Received from PO-2024-156" },
-    { id: "2", date: "2025-11-22", itemCode: "BLD-048", itemName: "Blade Set - 48 inch", transactionType: "Issue", quantityIn: 0, quantityOut: 30, warehouse: "WH-001", balance: 78, remarks: "Issued for production WO-2024-889" },
-    { id: "3", date: "2025-11-21", itemCode: "CAP-2.5", itemName: "Capacitor 2.5 μF", transactionType: "GRN", quantityIn: 200, quantityOut: 0, warehouse: "WH-002", balance: 322, remarks: "New stock received" },
-    { id: "4", date: "2025-11-21", itemCode: "COP-WND", itemName: "Copper Winding", transactionType: "Adjustment", quantityIn: 0, quantityOut: 12, warehouse: "WH-001", balance: 856, remarks: "Stock count adjustment - damage" },
-    { id: "5", date: "2025-11-20", itemCode: "MTR-001", itemName: "Motor Assembly XL", transactionType: "Issue", quantityIn: 0, quantityOut: 20, warehouse: "WH-003", balance: 95, remarks: "Production usage" },
-    { id: "6", date: "2025-11-20", itemCode: "BLD-048", itemName: "Blade Set - 48 inch", transactionType: "Return", quantityIn: 25, quantityOut: 0, warehouse: "WH-001", balance: 108, remarks: "Returned from production - excess" },
-    { id: "7", date: "2025-11-19", itemCode: "CAP-2.5", itemName: "Capacitor 2.5 μF", transactionType: "Issue", quantityIn: 0, quantityOut: 80, warehouse: "WH-002", balance: 122, remarks: "Assembly line requisition" },
-  ]);
   const [stockInOpen, setStockInOpen] = useState(false);
   const [stockOutOpen, setStockOutOpen] = useState(false);
   const { toast } = useToast();
@@ -118,15 +111,11 @@ const StockLedger = () => {
     }
   }, [location.state]);
 
-  // Mock items data
-  const items = [
-    { code: "MTR-001", name: "Motor Assembly XL" },
-    { code: "BLD-048", name: "Blade Set - 48 inch" },
-    { code: "CAP-2.5", name: "Capacitor 2.5 μF" },
-    { code: "COP-WND", name: "Copper Winding" },
-  ];
+  // Get items for dropdown
+  const itemsList = items.map(item => ({ code: item.sku, name: item.itemName }));
 
-  const warehouses = ["WH-001", "WH-002", "WH-003"];
+  // Get warehouse codes for dropdown
+  const warehousesList = warehouses.map(wh => wh.code);
 
   const stockInForm = useForm<z.infer<typeof stockInSchema>>({
     resolver: zodResolver(stockInSchema),
@@ -150,19 +139,16 @@ const StockLedger = () => {
   });
 
   const getLatestBalance = (itemCode: string, warehouse: string) => {
-    const itemEntries = entries
+    const itemEntries = transactions
       .filter((e) => e.itemCode === itemCode && e.warehouse === warehouse)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return itemEntries.length > 0 ? itemEntries[0].balance : 0;
   };
 
   const onStockIn = (values: z.infer<typeof stockInSchema>) => {
-    const item = items.find((i) => i.code === values.itemCode);
-    const currentBalance = getLatestBalance(values.itemCode, values.warehouse);
-    const newBalance = currentBalance + values.quantity;
-
-    const newEntry: LedgerEntry = {
-      id: Date.now().toString(),
+    const item = itemsList.find((i) => i.code === values.itemCode);
+    
+    recordTransaction({
       date: new Date().toISOString().split("T")[0],
       itemCode: values.itemCode,
       itemName: item?.name || "",
@@ -170,11 +156,9 @@ const StockLedger = () => {
       quantityIn: values.quantity,
       quantityOut: 0,
       warehouse: values.warehouse,
-      balance: newBalance,
       remarks: values.remarks || values.reference,
-    };
+    });
 
-    setEntries([newEntry, ...entries]);
     toast({
       title: "Stock In Successful",
       description: `Added ${values.quantity} units of ${item?.name}`,
@@ -184,7 +168,7 @@ const StockLedger = () => {
   };
 
   const onStockOut = (values: z.infer<typeof stockOutSchema>) => {
-    const item = items.find((i) => i.code === values.itemCode);
+    const item = itemsList.find((i) => i.code === values.itemCode);
     const currentBalance = getLatestBalance(values.itemCode, values.warehouse);
     
     if (currentBalance < values.quantity) {
@@ -196,10 +180,7 @@ const StockLedger = () => {
       return;
     }
 
-    const newBalance = currentBalance - values.quantity;
-
-    const newEntry: LedgerEntry = {
-      id: Date.now().toString(),
+    recordTransaction({
       date: new Date().toISOString().split("T")[0],
       itemCode: values.itemCode,
       itemName: item?.name || "",
@@ -207,11 +188,9 @@ const StockLedger = () => {
       quantityIn: 0,
       quantityOut: values.quantity,
       warehouse: values.warehouse,
-      balance: newBalance,
       remarks: `${values.reason}`,
-    };
+    });
 
-    setEntries([newEntry, ...entries]);
     toast({
       title: "Stock Out Successful",
       description: `Issued ${values.quantity} units of ${item?.name}`,
@@ -220,7 +199,7 @@ const StockLedger = () => {
     setStockOutOpen(false);
   };
 
-  const filteredEntries = entries.filter((entry) => {
+  const filteredEntries = transactions.filter((entry) => {
     const matchesSearch =
       entry.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       entry.itemCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -230,8 +209,8 @@ const StockLedger = () => {
     return matchesSearch && matchesItem && matchesWarehouse;
   });
 
-  const uniqueItems = Array.from(new Set(entries.map((e) => e.itemCode)));
-  const uniqueWarehouses = Array.from(new Set(entries.map((e) => e.warehouse)));
+  const uniqueItems = Array.from(new Set(transactions.map((e) => e.itemCode)));
+  const uniqueWarehouses = Array.from(new Set(transactions.map((e) => e.warehouse)));
 
   const getTransactionBadge = (type: string) => {
     switch (type) {
@@ -283,7 +262,7 @@ const StockLedger = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-background z-50">
-                            {items.map((item) => (
+                            {itemsList.map((item) => (
                               <SelectItem key={item.code} value={item.code}>
                                 {item.code} - {item.name}
                               </SelectItem>
@@ -307,7 +286,7 @@ const StockLedger = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-background z-50">
-                            {warehouses.map((wh) => (
+                            {warehousesList.map((wh) => (
                               <SelectItem key={wh} value={wh}>
                                 {wh}
                               </SelectItem>
@@ -392,7 +371,7 @@ const StockLedger = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-background z-50">
-                            {items.map((item) => (
+                            {itemsList.map((item) => (
                               <SelectItem key={item.code} value={item.code}>
                                 {item.code} - {item.name}
                               </SelectItem>
@@ -416,7 +395,7 @@ const StockLedger = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-background z-50">
-                            {warehouses.map((wh) => (
+                            {warehousesList.map((wh) => (
                               <SelectItem key={wh} value={wh}>
                                 {wh}
                               </SelectItem>

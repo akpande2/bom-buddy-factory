@@ -33,7 +33,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useWarehouseStore, type Bin } from "@/stores/warehouseStore";
+import { useInventoryStore, type Bin } from "@/stores/inventoryStore";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -46,7 +46,7 @@ const binSchema = z.object({
 const WarehouseDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getWarehouseById, updateWarehouse } = useWarehouseStore();
+  const { getWarehouseById, updateWarehouse } = useInventoryStore();
 
   const warehouse = id ? getWarehouseById(id) : null;
 

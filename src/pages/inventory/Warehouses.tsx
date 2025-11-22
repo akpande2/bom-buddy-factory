@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useWarehouseStore, type Warehouse } from "@/stores/warehouseStore";
+import { useInventoryStore, type Warehouse } from "@/stores/inventoryStore";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -64,7 +64,7 @@ const Warehouses = () => {
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<Warehouse | null>(null);
 
-  const { warehouses, addWarehouse, updateWarehouse, deleteWarehouse } = useWarehouseStore();
+  const { warehouses, addWarehouse, updateWarehouse, deleteWarehouse } = useInventoryStore();
 
   const [formData, setFormData] = useState({
     name: "",
