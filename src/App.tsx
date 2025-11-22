@@ -32,6 +32,12 @@ import StockLedger from "./pages/inventory/StockLedger";
 import GRNIntegration from "./pages/inventory/GRNIntegration";
 import Items from "./pages/inventory/Items";
 import ItemDetail from "./pages/inventory/ItemDetail";
+import SalesLayout from "./pages/sales/SalesLayout";
+import Leads from "./pages/sales/Leads";
+import SalesQuotations from "./pages/sales/SalesQuotations";
+import SalesOrders from "./pages/sales/SalesOrders";
+import DeliveryChallans from "./pages/sales/DeliveryChallans";
+import Invoices from "./pages/sales/Invoices";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +90,13 @@ const App = () => (
                     <Route path="warehouses/:id" element={<WarehouseDetail />} />
                     <Route path="stock-ledger" element={<StockLedger />} />
                     <Route path="grn-integration" element={<GRNIntegration />} />
+                  </Route>
+                  <Route path="/sales" element={<SalesLayout />}>
+                    <Route path="leads" element={<Leads />} />
+                    <Route path="quotations" element={<SalesQuotations />} />
+                    <Route path="orders" element={<SalesOrders />} />
+                    <Route path="challans" element={<DeliveryChallans />} />
+                    <Route path="invoices" element={<Invoices />} />
                   </Route>
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
