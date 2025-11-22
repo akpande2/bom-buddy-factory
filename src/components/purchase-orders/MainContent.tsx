@@ -4,6 +4,7 @@ import { ActiveRequestsTable } from "@/components/purchase-orders/ActiveRequests
 import { DocumentRepository } from "@/components/purchase-orders/DocumentRepository";
 import { PRTimeline } from "@/components/purchase-orders/PRTimeline";
 import { VendorComparisonCharts } from "@/components/purchase-orders/VendorComparisonCharts";
+import { FilterBar } from "@/components/purchase-orders/FilterBar";
 
 export const MainContent = () => {
   return (
@@ -17,6 +18,8 @@ export const MainContent = () => {
         <KPICards />
         
         <PipelineStages />
+        
+        <FilterBar />
         
         <ActiveRequestsTable />
         
