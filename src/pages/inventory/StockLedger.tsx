@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Download, Filter, Plus, Minus } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,6 +73,7 @@ const stockOutSchema = z.object({
 });
 
 const StockLedger = () => {
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<string>("all");
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
@@ -87,6 +89,34 @@ const StockLedger = () => {
   const [stockInOpen, setStockInOpen] = useState(false);
   const [stockOutOpen, setStockOutOpen] = useState(false);
   const { toast } = useToast();
+
+  // Handle GRN prefill from navigation state
+  useEffect(() => {
+    if (location.state?.grnData && location.state?.openStockIn) {
+      const grnData = location.state.grnData;
+      
+      // For simplicity, prefill with first item from GRN
+      if (grnData.items && grnData.items.length > 0) {
+        const firstItem = grnData.items[0];
+        stockInForm.reset({
+          itemCode: firstItem.itemCode,
+          warehouse: grnData.warehouse,
+          quantity: firstItem.quantity,
+          reference: grnData.grnNumber,
+          remarks: `From GRN: ${grnData.grnNumber} (PO: ${grnData.poNumber})`,
+        });
+        setStockInOpen(true);
+        
+        toast({
+          title: "GRN Data Loaded",
+          description: `Prefilled from ${grnData.grnNumber}`,
+        });
+      }
+      
+      // Clear the state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Mock items data
   const items = [
