@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, FileText, Upload, Download, Plus, X } from "lucide-react";
+import { ArrowLeft, Pencil, FileText, Upload, Download, Plus, X, Eye, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,12 @@ interface Vendor {
   productCategories?: string[];
   notes?: { id: string; text: string; date: string; author: string }[];
   additionalDocuments?: { id: string; name: string; uploadDate: string; type: string; data: string }[];
+  documentVault?: {
+    gstCertificate?: { name: string; uploadDate: string; data: string };
+    msmeCertificate?: { name: string; uploadDate: string; data: string };
+    isoCertificates?: { id: string; name: string; uploadDate: string; data: string }[];
+    cancelledCheque?: { name: string; uploadDate: string; data: string };
+  };
 }
 
 const VendorProfile = () => {
@@ -61,6 +67,9 @@ const VendorProfile = () => {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [isDocDialogOpen, setIsDocDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+  const [isVaultUploadOpen, setIsVaultUploadOpen] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<{ name: string; data: string } | null>(null);
+  const [vaultDocType, setVaultDocType] = useState<"gst" | "msme" | "iso" | "cheque">("gst");
   const [newNote, setNewNote] = useState("");
   const [newTag, setNewTag] = useState("");
   const [uploadingDoc, setUploadingDoc] = useState<{ name: string; data: string } | null>(null);
@@ -211,6 +220,78 @@ const VendorProfile = () => {
     link.href = data;
     link.download = filename;
     link.click();
+  };
+
+  const handleVaultUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const docData = {
+        name: file.name,
+        uploadDate: new Date().toISOString(),
+        data: reader.result as string,
+      };
+
+      const updatedVault = { ...(vendor.documentVault || {}) };
+
+      if (vaultDocType === "iso") {
+        // ISO can have multiple documents
+        updatedVault.isoCertificates = [
+          ...(updatedVault.isoCertificates || []),
+          { id: Date.now().toString(), ...docData },
+        ];
+      } else if (vaultDocType === "gst") {
+        updatedVault.gstCertificate = docData;
+      } else if (vaultDocType === "msme") {
+        updatedVault.msmeCertificate = docData;
+      } else if (vaultDocType === "cheque") {
+        updatedVault.cancelledCheque = docData;
+      }
+
+      const updatedVendor = {
+        ...vendor,
+        documentVault: updatedVault,
+      };
+
+      updateVendor(updatedVendor);
+      setIsVaultUploadOpen(false);
+      toast.success("Document uploaded to vault");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteVaultDoc = (type: "gst" | "msme" | "iso" | "cheque", isoId?: string) => {
+    const updatedVault = { ...(vendor.documentVault || {}) };
+
+    if (type === "iso" && isoId) {
+      updatedVault.isoCertificates = updatedVault.isoCertificates?.filter((doc) => doc.id !== isoId) || [];
+    } else if (type === "gst") {
+      delete updatedVault.gstCertificate;
+    } else if (type === "msme") {
+      delete updatedVault.msmeCertificate;
+    } else if (type === "cheque") {
+      delete updatedVault.cancelledCheque;
+    }
+
+    const updatedVendor = {
+      ...vendor,
+      documentVault: updatedVault,
+    };
+
+    updateVendor(updatedVendor);
+    toast.success("Document removed from vault");
+  };
+
+  const openVaultUploadDialog = (type: "gst" | "msme" | "iso" | "cheque") => {
+    setVaultDocType(type);
+    setIsVaultUploadOpen(true);
   };
 
   return (
@@ -389,6 +470,230 @@ const VendorProfile = () => {
                   <Label className="text-muted-foreground">IFSC Code</Label>
                   <p className="font-medium font-mono text-sm">{vendor.ifscCode}</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Document Vault Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileCheck className="h-5 w-5" />
+                Document Vault
+              </CardTitle>
+              <CardDescription>Secure storage for compliance and statutory documents</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* GST Certificate */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">GST Certificate</Label>
+                  {vendor.documentVault?.gstCertificate ? (
+                    <Badge variant="secondary">Uploaded</Badge>
+                  ) : (
+                    <Badge variant="outline">Not Uploaded</Badge>
+                  )}
+                </div>
+                {vendor.documentVault?.gstCertificate ? (
+                  <div className="p-3 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{vendor.documentVault.gstCertificate.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Uploaded: {new Date(vendor.documentVault.gstCertificate.uploadDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            setPreviewDoc({
+                              name: vendor.documentVault!.gstCertificate!.name,
+                              data: vendor.documentVault!.gstCertificate!.data,
+                            })
+                          }
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            downloadFile(vendor.documentVault!.gstCertificate!.data, vendor.documentVault!.gstCertificate!.name)
+                          }
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleDeleteVaultDoc("gst")}>
+                          <X className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => openVaultUploadDialog("gst")}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload GST Certificate
+                  </Button>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* MSME Certificate */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">MSME Certificate</Label>
+                  {vendor.documentVault?.msmeCertificate ? (
+                    <Badge variant="secondary">Uploaded</Badge>
+                  ) : (
+                    <Badge variant="outline">Not Uploaded</Badge>
+                  )}
+                </div>
+                {vendor.documentVault?.msmeCertificate ? (
+                  <div className="p-3 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{vendor.documentVault.msmeCertificate.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Uploaded: {new Date(vendor.documentVault.msmeCertificate.uploadDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            setPreviewDoc({
+                              name: vendor.documentVault!.msmeCertificate!.name,
+                              data: vendor.documentVault!.msmeCertificate!.data,
+                            })
+                          }
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            downloadFile(vendor.documentVault!.msmeCertificate!.data, vendor.documentVault!.msmeCertificate!.name)
+                          }
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleDeleteVaultDoc("msme")}>
+                          <X className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => openVaultUploadDialog("msme")}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload MSME Certificate
+                  </Button>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* ISO Certificates */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">ISO Certificates</Label>
+                  {vendor.documentVault?.isoCertificates && vendor.documentVault.isoCertificates.length > 0 ? (
+                    <Badge variant="secondary">{vendor.documentVault.isoCertificates.length} Uploaded</Badge>
+                  ) : (
+                    <Badge variant="outline">Not Uploaded</Badge>
+                  )}
+                </div>
+                {vendor.documentVault?.isoCertificates && vendor.documentVault.isoCertificates.length > 0 && (
+                  <div className="space-y-2">
+                    {vendor.documentVault.isoCertificates.map((doc) => (
+                      <div key={doc.id} className="p-3 border rounded-lg bg-muted/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{doc.name}</p>
+                            <p className="text-xs text-muted-foreground">Uploaded: {new Date(doc.uploadDate).toLocaleDateString()}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => setPreviewDoc({ name: doc.name, data: doc.data })}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => downloadFile(doc.data, doc.name)}>
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => handleDeleteVaultDoc("iso", doc.id)}>
+                              <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button size="sm" variant="outline" className="w-full" onClick={() => openVaultUploadDialog("iso")}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload ISO Certificate
+                </Button>
+              </div>
+
+              <Separator />
+
+              {/* Cancelled Cheque */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Cancelled Cheque</Label>
+                  {vendor.documentVault?.cancelledCheque ? (
+                    <Badge variant="secondary">Uploaded</Badge>
+                  ) : (
+                    <Badge variant="outline">Not Uploaded</Badge>
+                  )}
+                </div>
+                {vendor.documentVault?.cancelledCheque ? (
+                  <div className="p-3 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{vendor.documentVault.cancelledCheque.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Uploaded: {new Date(vendor.documentVault.cancelledCheque.uploadDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            setPreviewDoc({
+                              name: vendor.documentVault!.cancelledCheque!.name,
+                              data: vendor.documentVault!.cancelledCheque!.data,
+                            })
+                          }
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            downloadFile(vendor.documentVault!.cancelledCheque!.data, vendor.documentVault!.cancelledCheque!.name)
+                          }
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleDeleteVaultDoc("cheque")}>
+                          <X className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => openVaultUploadDialog("cheque")}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Cancelled Cheque
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -607,6 +912,66 @@ const VendorProfile = () => {
               </Button>
               <Button onClick={handleAddTag}>Add Category</Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Vault Upload Dialog */}
+      <Dialog open={isVaultUploadOpen} onOpenChange={setIsVaultUploadOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload to Document Vault</DialogTitle>
+            <DialogDescription>
+              Upload{" "}
+              {vaultDocType === "gst"
+                ? "GST Certificate"
+                : vaultDocType === "msme"
+                ? "MSME Certificate"
+                : vaultDocType === "iso"
+                ? "ISO Certificate"
+                : "Cancelled Cheque"}{" "}
+              (Max 5MB)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="vaultDoc">Select Document</Label>
+              <Input id="vaultDoc" type="file" onChange={handleVaultUpload} accept=".pdf,.jpg,.jpeg,.png" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsVaultUploadOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Preview Dialog */}
+      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{previewDoc?.name}</DialogTitle>
+          </DialogHeader>
+          {previewDoc && (
+            <div className="overflow-auto max-h-[70vh]">
+              {previewDoc.data.startsWith("data:application/pdf") ? (
+                <iframe src={previewDoc.data} className="w-full h-[600px] border rounded-lg" title="Document Preview" />
+              ) : (
+                <img src={previewDoc.data} alt={previewDoc.name} className="w-full h-auto rounded-lg" />
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPreviewDoc(null)}>
+              Close
+            </Button>
+            {previewDoc && (
+              <Button onClick={() => downloadFile(previewDoc.data, previewDoc.name)}>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
