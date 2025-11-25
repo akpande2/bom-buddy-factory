@@ -22,18 +22,18 @@ const topLevelItems = [
 const masterDataItems = [
   { title: "Items", url: "/inventory/items", icon: Package },
   { title: "Vendors", url: "/vendors", icon: Building2 },
-  { title: "Customers", url: "#", icon: Users },
+  { title: "Customers", url: "/customers", icon: Users },
   { title: "Warehouses", url: "/inventory/warehouses", icon: Warehouse },
 ];
 
 const procurementItems = [
-  { title: "Purchase Requisitions", url: "#", icon: ClipboardList },
+  { title: "Purchase Requisitions", url: "/procurement/purchase-requisitions", icon: ClipboardList },
   { title: "Purchase Orders", url: "/purchase-orders", icon: ShoppingCart },
 ];
 
 const inventoryWarehouseItems = [
   { title: "Stock Ledger", url: "/inventory/stock-ledger", icon: BookOpen },
-  { title: "Stock Transfer", url: "#", icon: GitCompareArrows },
+  { title: "Stock Transfer", url: "/inventory/stock-transfer", icon: GitCompareArrows },
 ];
 
 const salesDistributionItems = [
@@ -45,24 +45,24 @@ const salesDistributionItems = [
 
 const productionItems = [
   { title: "BOM", url: "/bom", icon: FileText },
-  { title: "Work Orders", url: "#", icon: Wrench },
+  { title: "Work Orders", url: "/production/work-orders", icon: Wrench },
 ];
 
 const financeItems = [
-  { title: "Accounts Payable", url: "#", icon: DollarSign },
-  { title: "Accounts Receivable", url: "#", icon: CreditCard },
-  { title: "General Ledger", url: "#", icon: BookOpen },
-  { title: "Payments", url: "#", icon: Banknote },
+  { title: "Accounts Payable", url: "/finance/accounts-payable", icon: DollarSign },
+  { title: "Accounts Receivable", url: "/finance/accounts-receivable", icon: CreditCard },
+  { title: "General Ledger", url: "/finance/general-ledger", icon: BookOpen },
+  { title: "Payments", url: "/finance/payments", icon: Banknote },
 ];
 
 const qualityControlItems = [
-  { title: "QC Checks", url: "#", icon: CheckCircle },
-  { title: "QC Reports", url: "#", icon: BarChart3 },
+  { title: "QC Checks", url: "/quality/checks", icon: CheckCircle },
+  { title: "QC Reports", url: "/quality/reports", icon: BarChart3 },
 ];
 
 const assetsItems = [
-  { title: "Fixed Assets", url: "#", icon: Archive },
-  { title: "Depreciation Schedule", url: "#", icon: TrendingDown },
+  { title: "Fixed Assets", url: "/assets/fixed-assets", icon: Archive },
+  { title: "Depreciation Schedule", url: "/assets/depreciation", icon: TrendingDown },
 ];
 
 export function AppSidebar() {

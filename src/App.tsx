@@ -23,15 +23,27 @@ import VendorProfile from "./pages/VendorProfile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Customers from "./pages/Customers";
 import InventoryLayout from "./pages/inventory/InventoryLayout";
 import InventoryDashboard from "./pages/inventory/InventoryDashboard";
 import ItemMaster from "./pages/inventory/ItemMaster";
 import Warehouses from "./pages/inventory/Warehouses";
 import WarehouseDetail from "./pages/inventory/WarehouseDetail";
 import StockLedger from "./pages/inventory/StockLedger";
+import StockTransfer from "./pages/inventory/StockTransfer";
 import GRNIntegration from "./pages/inventory/GRNIntegration";
 import Items from "./pages/inventory/Items";
 import ItemDetail from "./pages/inventory/ItemDetail";
+import PurchaseRequisitions from "./pages/procurement/PurchaseRequisitions";
+import WorkOrders from "./pages/production/WorkOrders";
+import AccountsPayable from "./pages/finance/AccountsPayable";
+import AccountsReceivable from "./pages/finance/AccountsReceivable";
+import GeneralLedger from "./pages/finance/GeneralLedger";
+import Payments from "./pages/finance/Payments";
+import QCChecks from "./pages/quality/QCChecks";
+import QCReports from "./pages/quality/QCReports";
+import FixedAssets from "./pages/assets/FixedAssets";
+import DepreciationSchedule from "./pages/assets/DepreciationSchedule";
 import SalesLayout from "./pages/sales/SalesLayout";
 import Leads from "./pages/sales/Leads";
 import SalesQuotations from "./pages/sales/SalesQuotations";
@@ -68,11 +80,13 @@ const App = () => (
               <main className="flex-1 overflow-auto bg-background">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/customers" element={<Customers />} />
                   <Route path="/bom" element={<BOM />} />
                   <Route path="/usage" element={<Usage />} />
                   <Route path="/stock" element={<Stock />} />
                   <Route path="/quotations" element={<Quotations />} />
                   <Route path="/purchase-orders" element={<PurchaseOrders />} />
+                  <Route path="/procurement/purchase-requisitions" element={<PurchaseRequisitions />} />
                   <Route path="/ops-form" element={<OpsForm />} />
                   <Route path="/pr-form" element={<PrForm />} />
                   <Route path="/loi-form" element={<LoiForm />} />
@@ -81,6 +95,15 @@ const App = () => (
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/vendors" element={<Vendors />} />
                   <Route path="/vendors/:id" element={<VendorProfile />} />
+                  <Route path="/production/work-orders" element={<WorkOrders />} />
+                  <Route path="/finance/accounts-payable" element={<AccountsPayable />} />
+                  <Route path="/finance/accounts-receivable" element={<AccountsReceivable />} />
+                  <Route path="/finance/general-ledger" element={<GeneralLedger />} />
+                  <Route path="/finance/payments" element={<Payments />} />
+                  <Route path="/quality/checks" element={<QCChecks />} />
+                  <Route path="/quality/reports" element={<QCReports />} />
+                  <Route path="/assets/fixed-assets" element={<FixedAssets />} />
+                  <Route path="/assets/depreciation" element={<DepreciationSchedule />} />
                   <Route path="/inventory" element={<InventoryLayout />}>
                     <Route index element={<InventoryDashboard />} />
                     <Route path="item-master" element={<ItemMaster />} />
@@ -89,6 +112,7 @@ const App = () => (
                     <Route path="warehouses" element={<Warehouses />} />
                     <Route path="warehouses/:id" element={<WarehouseDetail />} />
                     <Route path="stock-ledger" element={<StockLedger />} />
+                    <Route path="stock-transfer" element={<StockTransfer />} />
                     <Route path="grn-integration" element={<GRNIntegration />} />
                   </Route>
                   <Route path="/sales" element={<SalesLayout />}>
