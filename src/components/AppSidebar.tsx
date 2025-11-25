@@ -15,14 +15,9 @@ import {
 
 const inventoryItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Bill of Materials", url: "/bom", icon: Package },
-  { title: "Material Usage", url: "/usage", icon: TrendingUp },
   { title: "Stock Management", url: "/stock", icon: Package },
-  { title: "Inventory Module", url: "/inventory", icon: Box },
-  { title: "Quotations", url: "/quotations", icon: FileSpreadsheet },
   { title: "Purchase Orders", url: "/purchase-orders", icon: ShoppingCart },
   { title: "Sales", url: "/sales/leads", icon: ReceiptText },
-  { title: "Suppliers", url: "/suppliers", icon: Users },
   { title: "Vendor Management", url: "/vendors", icon: Building2 },
   { title: "Reports", url: "/reports", icon: FileText },
   { title: "Settings", url: "/settings", icon: Settings },
